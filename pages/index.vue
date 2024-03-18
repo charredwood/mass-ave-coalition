@@ -8,7 +8,7 @@ import 'element-plus/dist/index.css'
 import mapboxgl from 'mapbox-gl'
 import acsNYCHA from '~/static/ACS_NYCHA_2.json'
 
-const accessToken = ''
+const accessToken = 'environmentVariable'
 
 let map
 
