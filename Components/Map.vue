@@ -5,6 +5,7 @@ import { MapboxLayer } from '@deck.gl/mapbox'
 import { GeoJsonLayer } from '@deck.gl/layers'
 import { IconLayer } from '@deck.gl/layers'
 import 'element-plus/dist/index.css'
+import PopUp from '~/Components/PopUp.vue'
 
 // Mapbox imports
 import mapboxgl from 'mapbox-gl'
@@ -12,6 +13,14 @@ import acsNYCHA from '~/static/ACS_NYCHA_2.json'
 
 const accessToken =
   'pk.eyJ1IjoiaG9nYW5yeSIsImEiOiJjbHMwajM2NXIwMWRnMmtsZDI2YWlxNHNjIn0.hj-yWC3dV-QiBbQzZX54Pg'
+
+
+const popUpActive = ref(false)
+
+const popUpProperties = ref({
+  title: 'Test',
+  description: 'This is a Test',
+})
 
 let map
 
@@ -81,14 +90,24 @@ const addEvent = async () => {
       iconMapping:
         'https://raw.githubusercontent.com/visgl/deck.gl-data/master/website/icon-atlas.json',
       pickable: true,
-      onClick: (info) => console.log('Clicked on', info.object),
+      onClick: (info) => {
+        popUpActive.value = !popUpActive.value
+        popUpProperties.value = info
+        console.log('Clicked on', info.object, info)
+        console.log(popUpActive.value)
+      },
     })
   )
 }
+
+
+
+
 </script>
 
 <template>
   <main id="main-container" />
+  <PopUp v-if="popUpActive" :popUpProperties="popUpProperties" />
 </template>
 
 <style lang="postcss" scoped>

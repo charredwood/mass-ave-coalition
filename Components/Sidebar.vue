@@ -7,21 +7,17 @@
         <div class="collection tools" v-if="isExpanded">
             <input type="search" id="site-search" name="q" aria-label="Search through site content"
                 placeholder="Search..." class="search-bar">
-        </div>
 
-        <div class="filters" v-if="isExpanded">
-            <el-menu default-active="2" class="el-menu-vertical-demo" @open="handleOpen" @close="handleClose">
+            <el-menu>
                 <el-sub-menu index="1">
-                    <template #title>
-                        <span class="bold-title">FILTER</span>
-                    </template>
+                    <template #title><span class="bold-title">FILTER</span></template>
                     <el-menu-item index="1-1">
                         <el-checkbox>IMAGES</el-checkbox>
                     </el-menu-item>
                     <el-menu-item index="1-2">
                         <el-checkbox>STORIES</el-checkbox>
                     </el-menu-item>
-                    <el-menu-item index="1-2">
+                    <el-menu-item index="1-3">
                         <el-checkbox>HISTORIC LOCATIONS</el-checkbox>
                     </el-menu-item>
 
@@ -30,7 +26,8 @@
                         <div class="slider-label">
                             <span>TIME RANGE: </span><span class="slider-value">{{ timeRangeValue.join(' - ') }}</span>
                         </div>
-                        <el-slider v-model="timeRangeValue" :min="1620" :max="2024" range class="range-slider">
+                        <el-slider v-model="timeRangeValue" :min="1620" :max="2024" :show-tooltip="false" range
+                            class="range-slider">
                         </el-slider>
                     </div>
 
@@ -130,6 +127,10 @@ const toggleExpand = () => {
     padding: 5px;
 }
 
+.el-menu--vertical {
+    border-right: none;
+}
+
 .el-menu-vertical-demo:not(.el-menu--collapse) {
     border-right: none;
 }
@@ -152,6 +153,7 @@ const toggleExpand = () => {
     margin: 0 auto;
 }
 
+
 :deep(.el-slider__runway) {
     background: #d3d3d3 !important;
     height: 15px !important;
@@ -172,6 +174,7 @@ const toggleExpand = () => {
     background: white !important;
     border-radius: 50% !important;
     border: 1px !important;
+
     transform: translateY(5px) !important;
 
 }

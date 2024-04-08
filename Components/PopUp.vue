@@ -1,17 +1,13 @@
 <template>
-  <div v-if="state.showPopup" class="popup">
-    <button @click="closePopup">Close</button>
-    <h2>{{ state.title }}</h2>
-    <p>{{ state.message }}</p>
+  <div class="popup" :class="{ left: popUpProperties.x + 'px', top: popUpProperties.y + 'px' }">
+    <!-- <button @click=" closePopup">Close</button> -->
+    <h2>{{ popUpProperties.object['TITLE'] }}</h2>
+    <p>{{ popUpProperties.object['DESCRIPTION'] }}</p>
   </div>
 </template>
 
 <script setup>
-const state = reactive({
-  showPopup: false,
-  title: '',
-  message: '',
-})
+
 
 function openPopup(title, message) {
   state.title = title
@@ -22,17 +18,22 @@ function openPopup(title, message) {
 function closePopup() {
   state.showPopup = false
 }
+
+const props = defineProps({
+  popUpProperties: Object,
+});
 </script>
 
 <style scoped>
 .popup {
   position: fixed;
-  top: 50%;
-  left: 50%;
+  width: 300px;
+  height: 300px;
   transform: translate(-50%, -50%);
-  background: white;
+  background: red;
   padding: 20px;
   border: 1px solid black;
   z-index: 1000;
+
 }
 </style>
