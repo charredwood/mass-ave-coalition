@@ -9,7 +9,6 @@ import PopUp from '~/Components/PopUp.vue'
 
 // Mapbox imports
 import mapboxgl from 'mapbox-gl'
-import acsNYCHA from '~/static/ACS_NYCHA_2.json'
 
 const accessToken =
   'pk.eyJ1IjoiaG9nYW5yeSIsImEiOiJjbHMwajM2NXIwMWRnMmtsZDI2YWlxNHNjIn0.hj-yWC3dV-QiBbQzZX54Pg'
@@ -49,15 +48,6 @@ const loadMapDraw = () => {
     attributionControl: false,
   })
 
-  // /* -------------------------------------------------------------------------- */
-  // /*                                MAP CALLBACKS                               */
-  // /* -------------------------------------------------------------------------- */
-
-  // /* ---------------------------------- LOAD ---------------------------------- */
-
-  //
-  // Extent
-  // -122.5112833477207062,37.7073752682728482 : -122.3697531769701499,37.8054956996366940
 
   map.on('load', () => {
     const firstLabelLayerId = map
