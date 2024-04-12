@@ -7,14 +7,11 @@ import Map from '~/Components/Map.vue';
 
 <template>
 
-    <section>
-        <MainHeader />
-        <Sidebar />
-    </section>
 
-    <section>
-        <Map />
-    </section>
+    <MainHeader />
+    <Sidebar />
+    <Map />
+
 </template>
 
 

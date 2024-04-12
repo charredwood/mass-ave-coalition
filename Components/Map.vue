@@ -12,14 +12,8 @@ import mapboxgl from 'mapbox-gl'
 
 const accessToken =
   'pk.eyJ1IjoiaG9nYW5yeSIsImEiOiJjbHMwajM2NXIwMWRnMmtsZDI2YWlxNHNjIn0.hj-yWC3dV-QiBbQzZX54Pg'
-
-
 const popUpActive = ref(false)
-
-const popUpProperties = ref({
-  title: 'Test',
-  description: 'This is a Test',
-})
+const popUpProperties = ref({})
 
 let map
 
@@ -41,11 +35,11 @@ const loadMapDraw = () => {
   console.log('creating map')
   map = new mapboxgl.Map({
     container: 'main-container',
-    style: 'mapbox://styles/hoganry/clu8tr3m400kt01p8dqowcdaf',
+    style: 'mapbox://styles/hoganry/cluwz0ht400hb01pe9e8x6qp9',
     center: [-71.078592, 42.337496], // longitude, latitude
-    zoom: 17, // starting zoom level
-    pitch: 37.5,
+    zoom: 16, // starting zoom level
     attributionControl: false,
+    doubleClickZoom: false
   })
 
 
@@ -60,12 +54,14 @@ const loadMapDraw = () => {
 const addEvent = async () => {
   const imagesData = await csv('csv/Collective_History_DB.csv')
 
+
+
   map.addLayer(
     new MapboxLayer({
       id: 'EventLayer',
       type: IconLayer,
       data: imagesData,
-      getColor: (d) => [255, 0, 0],
+      getColor: (d) => [37, 166, 154],
       getIcon: (d) => 'marker',
       getPosition: (d) => {
         console.log(d, 'ddddd', [
@@ -74,7 +70,7 @@ const addEvent = async () => {
         ]) ///d.coordinates
         return [-1 * parseFloat(d['LONGITUDE']), parseFloat(d['LATITUDE'])]
       },
-      getSize: 80,
+      getSize: 50,
       iconAtlas:
         'https://raw.githubusercontent.com/visgl/deck.gl-data/master/website/icon-atlas.png',
       iconMapping:
@@ -90,9 +86,6 @@ const addEvent = async () => {
   )
 }
 
-
-
-
 </script>
 
 <template>
@@ -103,7 +96,7 @@ const addEvent = async () => {
 <style lang="postcss" scoped>
 #main-container {
   width: 100%;
-  min-height: 100vh;
+  height: calc(100vh - 60px);
   margin: 0;
   flex-direction: column;
 }
