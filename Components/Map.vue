@@ -53,7 +53,7 @@ const loadMapDraw = () => {
 
 const addEvent = async () => {
   const imagesData = await csv('csv/Collective_History_DB.csv')
-
+  console.log(imagesData)
 
 
   map.addLayer(
@@ -61,7 +61,7 @@ const addEvent = async () => {
       id: 'EventLayer',
       type: IconLayer,
       data: imagesData,
-      getColor: (d) => [37, 166, 154],
+      getColor: (d) => d.YEAR >= 1800 && d.YEAR <= 1900 || d.IMG_SOURCE == "" ? [255, 0, 0] : [0, 255, 0],
       getIcon: (d) => 'marker',
       getPosition: (d) => {
         console.log(d, 'ddddd', [

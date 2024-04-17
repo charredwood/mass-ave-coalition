@@ -5,7 +5,7 @@
             <el-menu>
                 <el-sub-menu index="1">
                     <template #title><span class="bold-title">FILTER</span></template>
-                    <el-menu-item index="1-1">
+                    <el-menu-item index="1-1" v-model="imageChecked">
                         <el-checkbox>IMAGES</el-checkbox>
                     </el-menu-item>
                     <el-menu-item index="1-2">
