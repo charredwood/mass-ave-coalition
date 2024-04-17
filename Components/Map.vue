@@ -12,8 +12,10 @@ import mapboxgl from 'mapbox-gl'
 
 const accessToken =
   'pk.eyJ1IjoiaG9nYW5yeSIsImEiOiJjbHMwajM2NXIwMWRnMmtsZDI2YWlxNHNjIn0.hj-yWC3dV-QiBbQzZX54Pg'
+<<<<<<< Updated upstream
+=======
 
-
+>>>>>>> Stashed changes
 const popUpActive = ref(false)
 
 const popUpProperties = ref({
@@ -26,6 +28,7 @@ let map
 onMounted(async () => {
   loadMapDraw()
   addEvent()
+  addImage()
 })
 
 /***
@@ -48,7 +51,6 @@ const loadMapDraw = () => {
     attributionControl: false,
   })
 
-
   map.on('load', () => {
     const firstLabelLayerId = map
       .getStyle()
@@ -58,14 +60,19 @@ const loadMapDraw = () => {
 }
 
 const addEvent = async () => {
-  const imagesData = await csv('csv/Collective_History_DB.csv')
+  const eventsData = await csv('csv/DB_0414_events.csv')
 
   map.addLayer(
     new MapboxLayer({
       id: 'EventLayer',
       type: IconLayer,
+<<<<<<< Updated upstream
       data: imagesData,
+      getColor: (d) => [37, 166, 154],
+=======
+      data: eventsData,
       getColor: (d) => [255, 0, 0],
+>>>>>>> Stashed changes
       getIcon: (d) => 'marker',
       getPosition: (d) => {
         console.log(d, 'ddddd', [
@@ -90,14 +97,46 @@ const addEvent = async () => {
   )
 }
 
+<<<<<<< Updated upstream
+=======
+const addImage = async () => {
+  const imagesData = await csv('csv/DB_0416_images.csv')
 
-
-
+  map.addLayer(
+    new MapboxLayer({
+      id: 'ImageLayer',
+      type: IconLayer,
+      data: imagesData,
+      getColor: (d) => [0, 255, 0],
+      getIcon: (d) => 'marker',
+      getPosition: (d) => {
+        console.log(d, 'ddddd', [
+          -1 * parseFloat(d['LONGITUDE']),
+          parseFloat(d['LATITUDE']),
+        ]) ///d.coordinates
+        return [-1 * parseFloat(d['LONGITUDE']), parseFloat(d['LATITUDE'])]
+      },
+      getSize: 80,
+      iconAtlas:
+        'https://raw.githubusercontent.com/visgl/deck.gl-data/master/website/icon-atlas.png',
+      iconMapping:
+        'https://raw.githubusercontent.com/visgl/deck.gl-data/master/website/icon-atlas.json',
+      pickable: true,
+      onClick: (info) => {
+        popUpActive.value = !popUpActive.value
+        popUpProperties.value = info
+        console.log('Clicked on', info.object, info)
+        console.log(popUpActive.value)
+      },
+    })
+  )
+}
+>>>>>>> Stashed changes
 </script>
 
 <template>
   <main id="main-container" />
-  <PopUp v-if="popUpActive" :popUpProperties="popUpProperties" />
+  <PopUp v-if="popUpActive" :pop-up-properties="popUpProperties" />
 </template>
 
 <style lang="postcss" scoped>
