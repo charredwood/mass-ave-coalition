@@ -1,9 +1,7 @@
 <template>
-<<<<<<< Updated upstream
   <div class="popup" :style="{ left: popUpProperties.x + 'px', top: popUpProperties.y - height + 'px' }">
     <h2>{{ popUpProperties.object['TITLE'] }}</h2>
     <p>{{ popUpProperties.object['DESCRIPTION'] }}</p>
-=======
   <div class="popup">
     <div class="popupHeader">
       <button class="close-button" onclick="closePopup()">[Close]</button>
@@ -28,20 +26,13 @@
       </p>
       <p>Source: {{ popUpProperties.object['SOURCE_NAME'] }}</p>
     </div>
->>>>>>> Stashed changes
   </div>
 </template>
 
 <script setup>
-<<<<<<< Updated upstream
-
-
-function openPopup() {
-=======
 function openPopup(title, message) {
   state.title = title
   state.message = message
->>>>>>> Stashed changes
   state.showPopup = true
 }
 
@@ -51,13 +42,10 @@ function closePopup() {
 
 const props = defineProps({
   popUpProperties: Object,
-<<<<<<< Updated upstream
 });
 
 const height = 25
-=======
 })
->>>>>>> Stashed changes
 </script>
 
 <style scoped>
@@ -66,14 +54,27 @@ const height = 25
   top: 45%;
   left: 50%;
   width: 300px;
-<<<<<<< Updated upstream
   height: auto;
   transform: translate(-50%, -50%);
-  background: red;
+  background: white;
   padding: 20px;
-  border: 1px solid black;
-  z-index: 1000;
+  z-index: 10;
+  border-radius: 20px;
+  box-shadow: 0px 2px 16px rgba(0, 0, 0, 0.5);
 
+}
+
+.popup::after {
+  content: '';
+  position: absolute;
+  bottom: -10px;
+  left: 50%;
+  width: 0;
+  height: 0;
+  border-left: 15px solid transparent;
+  border-right: 15px solid transparent;
+  border-top: 10px solid white;
+  transform: translateX(-50%);
 }
 
 
@@ -124,6 +125,5 @@ const height = 25
 .titleStyle {
   font-size: 1em;
   font-weight: bold;
->>>>>>> Stashed changes
 }
 </style>
