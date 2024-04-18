@@ -24,6 +24,12 @@ let eventLayer;
 let imageLayer;
 let map
 
+const calculateOpacity = (year, range) => {
+  const [minYear, maxYear] = range;
+  return (year >= minYear && year <= maxYear) ? 255 : 0;  // 255 for opaque, 0 for transparent
+};
+
+
 onMounted(async () => {
   loadMapDraw()
   addEvent()
@@ -41,6 +47,20 @@ watch(() => dashboardUI.eventLayerVisible, (newVisibility) => {
         eventLayer.setProps({ visible: newVisibility });
     }
 }, { immediate: true });
+
+watch(() => dashboardUI.timeRangeValue, (newRange) => {
+  if (eventLayer) {
+    eventLayer.setProps({
+      getColor: (d) => [255, 0, 0, calculateOpacity(parseInt(d.YEAR), newRange)]
+    });
+  }
+  if (imageLayer) {
+    imageLayer.setProps({
+      getColor: (d) => [0, 255, 0, calculateOpacity(parseInt(d.YEAR), newRange)]
+    });
+  }
+}, { deep: true });
+
 /***
  * Loads mapbox map and Deck.gl
  */
@@ -78,8 +98,10 @@ const addEvent = async () => {
       id: 'EventLayer',
       type: IconLayer,
       data: eventsData,
-      // getColor: (d) => d.YEAR >= 1800 && d.YEAR <= 1900 || d.IMG_SOURCE == "" ? [255, 0, 0] : [0, 255, 0],
-      getColor: (d) => [0, 255, 0],
+      getColor: (d) => {
+        const opacity = calculateOpacity(parseInt(d.YEAR), dashboardUI.timeRangeValue);
+        return [255, 0, 0, opacity]; 
+      },
       getIcon: (d) => 'marker',
       getPosition: (d) => {
         console.log(d, 'ddddd', [
@@ -112,7 +134,10 @@ const addImage = async () => {
       id: 'ImageLayer',
       type: IconLayer,
       data: imagesData,
-      getColor: (d) => [0, 255, 0],
+      getColor: (d) => {
+        const opacity = calculateOpacity(parseInt(d.YEAR), dashboardUI.timeRangeValue);
+        return [255, 0, 0, opacity]; 
+      },
       getIcon: (d) => 'marker',
       getPosition: (d) => {
         console.log(d, 'ddddd', [

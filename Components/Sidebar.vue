@@ -11,17 +11,14 @@
                     <el-menu-item index="1-2">
                         <el-checkbox v-model="dashboardUI.eventLayerVisible">STORIES</el-checkbox>
                     </el-menu-item>
-                    <!-- <el-menu-item index="1-3">
-                        <el-checkbox>HISTORIC LOCATIONS</el-checkbox>
-                    </el-menu-item> -->
-
+                 
 
                     <div class="dualslidecontainer">
                         <div class="slider-label">
-                            <span>TIME RANGE: </span><span class="slider-value">{{ timeRangeValue.join(' - ') }}</span>
+                            <span>TIME RANGE: </span><span class="slider-value">{{ dashboardUI.timeRangeValue.join(' - ') }}</span>
                         </div>
-                        <el-slider v-model="timeRangeValue" :min="1620" :max="2024" :show-tooltip="false" range
-                            class="range-slider">
+                        <el-slider v-model="dashboardUI.timeRangeValue" :min="1620" :max="2024" range class="range-slider" :show-tooltip="false">
+
                         </el-slider>
                     </div>
 
@@ -59,8 +56,9 @@
 </template>
 
 <script setup>
+import { ref } from 'vue';
 import { useDashboardUIStore } from '~/stores/dashboardUI'; // Adjust path as necessary
-import { ElMenu, ElSubMenu, ElMenuItem, ElCheckbox } from 'element-plus';
+import { ElMenu, ElSubMenu, ElMenuItem, ElCheckbox, ElSlider } from 'element-plus';
 
 
 const dashboardUI = useDashboardUIStore();
@@ -129,7 +127,6 @@ const toggleExpand = () => {
 }
 
 
-
 :deep(.el-slider__runway) {
     background: #d3d3d3 !important;
     height: 15px !important;
@@ -174,8 +171,6 @@ const toggleExpand = () => {
     margin-bottom: 20px;
 
 }
-
-
 
 /* Slider Handle */
 .slider::-webkit-slider-thumb {
