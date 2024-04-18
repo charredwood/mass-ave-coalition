@@ -5,7 +5,7 @@ import { MapboxLayer } from '@deck.gl/mapbox'
 import { GeoJsonLayer } from '@deck.gl/layers'
 import { IconLayer } from '@deck.gl/layers'
 import 'element-plus/dist/index.css'
-import PopUp from '~/Components/PopUp.vue'
+import PopUp from '~/components/PopUp.vue'
 
 // Mapbox imports
 import mapboxgl from 'mapbox-gl'
@@ -54,14 +54,15 @@ const loadMapDraw = () => {
 
 const addEvent = async () => {
   const eventsData = await csv('csv/DB_0414_events.csv')
-  console.log(imagesData)
+  console.log(eventsData)
 
   map.addLayer(
     new MapboxLayer({
       id: 'EventLayer',
       type: IconLayer,
       data: eventsData,
-      getColor: (d) => d.YEAR >= 1800 && d.YEAR <= 1900 || d.IMG_SOURCE == "" ? [255, 0, 0] : [0, 255, 0],
+      // getColor: (d) => d.YEAR >= 1800 && d.YEAR <= 1900 || d.IMG_SOURCE == "" ? [255, 0, 0] : [0, 255, 0],
+      getColor: (d) => [0, 255, 0],
       getIcon: (d) => 'marker',
       getPosition: (d) => {
         console.log(d, 'ddddd', [
@@ -103,7 +104,7 @@ const addImage = async () => {
         ]) ///d.coordinates
         return [-1 * parseFloat(d['LONGITUDE']), parseFloat(d['LATITUDE'])]
       },
-      getSize: 80,
+      getSize: 50,
       iconAtlas:
         'https://raw.githubusercontent.com/visgl/deck.gl-data/master/website/icon-atlas.png',
       iconMapping:

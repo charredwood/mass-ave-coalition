@@ -1,8 +1,5 @@
 <template>
   <div class="popup" :style="{ left: popUpProperties.x + 'px', top: popUpProperties.y - height + 'px' }">
-    <h2>{{ popUpProperties.object['TITLE'] }}</h2>
-    <p>{{ popUpProperties.object['DESCRIPTION'] }}</p>
-  <div class="popup">
     <div class="popupHeader">
       <button class="close-button" onclick="closePopup()">[Close]</button>
       <p class="dateStyle">{{ popUpProperties.object['YEAR'] }}</p>
@@ -45,7 +42,7 @@ const props = defineProps({
 });
 
 const height = 25
-})
+
 </script>
 
 <style scoped>
@@ -64,18 +61,6 @@ const height = 25
 
 }
 
-.popup::after {
-  content: '';
-  position: absolute;
-  bottom: -10px;
-  left: 50%;
-  width: 0;
-  height: 0;
-  border-left: 15px solid transparent;
-  border-right: 15px solid transparent;
-  border-top: 10px solid white;
-  transform: translateX(-50%);
-}
 
 
 .popupHeader {
