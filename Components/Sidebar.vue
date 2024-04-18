@@ -5,15 +5,15 @@
             <el-menu>
                 <el-sub-menu index="1">
                     <template #title><span class="bold-title">FILTER</span></template>
-                    <el-menu-item index="1-1" v-model="imageChecked">
-                        <el-checkbox>IMAGES</el-checkbox>
+                    <el-menu-item index="1-1">
+                        <el-checkbox v-model="dashboardUI.imageLayerVisible">IMAGES</el-checkbox>
                     </el-menu-item>
                     <el-menu-item index="1-2">
-                        <el-checkbox>STORIES</el-checkbox>
+                        <el-checkbox v-model="dashboardUI.eventLayerVisible">STORIES</el-checkbox>
                     </el-menu-item>
-                    <el-menu-item index="1-3">
+                    <!-- <el-menu-item index="1-3">
                         <el-checkbox>HISTORIC LOCATIONS</el-checkbox>
-                    </el-menu-item>
+                    </el-menu-item> -->
 
 
                     <div class="dualslidecontainer">
@@ -59,8 +59,12 @@
 </template>
 
 <script setup>
-import { ref, reactive } from 'vue';
-import { ElMenu, ElMenuItem, ElCheckbox, ElSubMenu, ElSlider } from 'element-plus';
+import { useDashboardUIStore } from '~/stores/dashboardUI'; // Adjust path as necessary
+import { ElMenu, ElSubMenu, ElMenuItem, ElCheckbox } from 'element-plus';
+
+
+const dashboardUI = useDashboardUIStore();
+
 
 const isExpanded = ref(true);
 
@@ -123,6 +127,7 @@ const toggleExpand = () => {
     width: 80%;
     margin: 0 auto;
 }
+
 
 
 :deep(.el-slider__runway) {

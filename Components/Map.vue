@@ -1,11 +1,15 @@
 <script setup>
 // IMPORTS
+import { onMounted, watch } from 'vue';
 import { csv } from 'd3'
 import { MapboxLayer } from '@deck.gl/mapbox'
 import { GeoJsonLayer } from '@deck.gl/layers'
 import { IconLayer } from '@deck.gl/layers'
 import 'element-plus/dist/index.css'
 import PopUp from '~/components/PopUp.vue'
+import { ref } from 'vue';
+import { useDashboardUIStore } from '~/stores/dashboardUI'; 
+
 
 // Mapbox imports
 import mapboxgl from 'mapbox-gl'
@@ -13,9 +17,11 @@ import mapboxgl from 'mapbox-gl'
 const accessToken =
   'pk.eyJ1IjoiaG9nYW5yeSIsImEiOiJjbHMwajM2NXIwMWRnMmtsZDI2YWlxNHNjIn0.hj-yWC3dV-QiBbQzZX54Pg'
 
+const dashboardUI = useDashboardUIStore();
 const popUpActive = ref(false)
 const popUpProperties = ref({})
-
+let eventLayer;
+let imageLayer;
 let map
 
 onMounted(async () => {
@@ -24,6 +30,17 @@ onMounted(async () => {
   addImage()
 })
 
+watch(() => dashboardUI.imageLayerVisible, (newVisibility) => {
+    if (imageLayer) {
+        imageLayer.setProps({ visible: newVisibility });
+    }
+}, { immediate: true });
+
+watch(() => dashboardUI.eventLayerVisible, (newVisibility) => {
+    if (eventLayer) {
+        eventLayer.setProps({ visible: newVisibility });
+    }
+}, { immediate: true });
 /***
  * Loads mapbox map and Deck.gl
  */
@@ -57,7 +74,7 @@ const addEvent = async () => {
   console.log(eventsData)
 
   map.addLayer(
-    new MapboxLayer({
+   eventLayer = new MapboxLayer({
       id: 'EventLayer',
       type: IconLayer,
       data: eventsData,
@@ -91,7 +108,7 @@ const addImage = async () => {
   const imagesData = await csv('csv/DB_0416_images.csv')
 
   map.addLayer(
-    new MapboxLayer({
+    imageLayer = new MapboxLayer({
       id: 'ImageLayer',
       type: IconLayer,
       data: imagesData,
@@ -109,16 +126,21 @@ const addImage = async () => {
         'https://raw.githubusercontent.com/visgl/deck.gl-data/master/website/icon-atlas.png',
       iconMapping:
         'https://raw.githubusercontent.com/visgl/deck.gl-data/master/website/icon-atlas.json',
-      pickable: true,
+        visible: dashboardUI.imageLayerVisible,
+        pickable: true,
       onClick: (info) => {
         popUpActive.value = !popUpActive.value
         popUpProperties.value = info
         console.log('Clicked on', info.object, info)
         console.log(popUpActive.value)
+      
       },
     })
+    
   )
 }
+
+
 </script>
 
 <template>

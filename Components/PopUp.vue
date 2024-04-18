@@ -15,7 +15,9 @@
           style="width: 100%; height: auto"
         />
       </div>
-      <p class="bodySpacing">{{ popUpProperties.object['DESCRIPTION'] }}</p>
+      <div class="scrollableText">
+        <p class="bodySpacing">{{ popUpProperties.object['DESCRIPTION'] }}</p>
+      </div>
       <p class="bodySpacing">
         <b style="color: #25a69a">Location </b>
         {{ popUpProperties.object['LOCATION_NAME'] }} <br />
@@ -48,9 +50,9 @@ const height = 25
 <style scoped>
 .popup {
   position: absolute;
-  top: 45%;
+  top: 50%;
   left: 50%;
-  width: 300px;
+  width: 450px;
   height: auto;
   transform: translate(-50%, -50%);
   background: white;
@@ -58,10 +60,9 @@ const height = 25
   z-index: 10;
   border-radius: 20px;
   box-shadow: 0px 2px 16px rgba(0, 0, 0, 0.5);
-
+  max-height: 70vh;
+  overflow: hidden;
 }
-
-
 
 .popupHeader {
   position: sticky;
@@ -84,13 +85,40 @@ const height = 25
   font-weight: normal;
   display: flex;
   flex-direction: column;
-  overflow: scroll;
+}
+
+.scrollableText {
+  max-height: 40vh;
+  overflow-y: auto;
+  margin-bottom: 10px;
+  padding-bottom: 10px;
+  border-bottom: 1px solid #d3d3d3;
+
+  /* Hide scrollbar arrows (buttons) */
+  scrollbar-arrow-color: transparent;
+
+  /* Custom scrollbar styles */
+  scrollbar-color: #25a69a transparent; /* thumb and track color */
+  scrollbar-width: thin;
+}
+
+/* For Webkit browsers (Chrome, Safari) */
+.scrollableText::-webkit-scrollbar {
+  width: 8px; /* width of the entire scrollbar */
+}
+
+.scrollableText::-webkit-scrollbar-track {
+  background: transparent; /* color of the tracking area */
+}
+
+.scrollableText::-webkit-scrollbar-thumb {
+  background-color: #25a69a; /* color of the scroll thumb */
+  border-radius: 20px; /* roundness of the scroll thumb */
+  border: 3px solid transparent; /* creates padding around scroll thumb */
 }
 
 .bodySpacing {
   margin-bottom: 10px;
-  padding-bottom: 10px;
-  border-bottom: 1px solid #d3d3d3;
 }
 
 .close-button {
