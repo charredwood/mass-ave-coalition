@@ -4,7 +4,8 @@ export const useDashboardUIStore = defineStore('dashboardUI', {
   state: () => ({
     imageLayerVisible: true,
     eventLayerVisible: true,
-    timeRangeValue: [1620, 2024]  // ensure this is reactive
+    timeRangeValue: [1800, 1950],
+
   }),
   actions: {
     toggleImageLayerVisibility() {
@@ -14,7 +15,8 @@ export const useDashboardUIStore = defineStore('dashboardUI', {
       this.eventLayerVisible = !this.eventLayerVisible;
     },
     setTimeRangeValue(newRange) {
-      this.timeRangeValue = newRange;  // ensure reactivity is maintained
+      this.timeRangeValue = newRange;
     }
+
   }
 });

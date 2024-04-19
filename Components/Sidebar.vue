@@ -9,7 +9,7 @@
                         <el-checkbox v-model="dashboardUI.imageLayerVisible">IMAGES</el-checkbox>
                     </el-menu-item>
                     <el-menu-item index="1-2">
-                        <el-checkbox v-model="dashboardUI.eventLayerVisible">STORIES</el-checkbox>
+                        <el-checkbox v-model="dashboardUI.eventLayerVisible">HISTORIES</el-checkbox>
                     </el-menu-item>
                  
 
@@ -24,7 +24,7 @@
 
                 </el-sub-menu>
 
-                <el-sub-menu index="2">
+                <el-sub-menu index="2" disabled>
                     <template #title><span class="bold-title">MAPS</span></template>
 
                     <div class="slidecontainer">
@@ -42,7 +42,7 @@
                     </div>
                 </el-sub-menu>
 
-                <el-sub-menu index="3">
+                <el-sub-menu index="3" disabled>
                     <template #title><span class="bold-title">ADD TO THE HISTORY</span></template>
                     <el-menu-item index="3-1">DROP A PIN</el-menu-item>
 
@@ -136,7 +136,7 @@ const toggleExpand = () => {
 }
 
 :deep(.el-slider__bar) {
-    background: #25A69A !important;
+    background: #a7a7a7 !important;
     height: 15px !important;
 
 }
@@ -144,7 +144,7 @@ const toggleExpand = () => {
 :deep(.el-slider__button) {
     width: 15px !important;
     height: 15px !important;
-    background: white !important;
+    background: #25A69A !important;
     border-radius: 50% !important;
     border: 1px !important;
 

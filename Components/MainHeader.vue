@@ -13,7 +13,7 @@ function showModal() {
   <header class="header">
     <div class="left">
       <input type="search" id="site-search" name="q" aria-label="Search through site content" placeholder="Search..."
-        class="search-bar">
+        class="search-bar" disabled>
     </div>
     <div class="title-container">
       <h1>Collective History</h1>
