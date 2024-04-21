@@ -1,13 +1,12 @@
 <script setup>
 // IMPORTS
-import { onMounted, watch } from 'vue';
+import { ref, onMounted, watch } from 'vue';
 import { csv } from 'd3'
 import { MapboxLayer } from '@deck.gl/mapbox'
 import { GeoJsonLayer } from '@deck.gl/layers'
 import { IconLayer } from '@deck.gl/layers'
 import 'element-plus/dist/index.css'
 import PopUp from '~/components/PopUp.vue'
-import { ref } from 'vue';
 import { useDashboardUIStore } from '~/stores/dashboardUI'; 
 
 
@@ -17,17 +16,13 @@ import mapboxgl from 'mapbox-gl'
 const accessToken =
   'pk.eyJ1IjoiaG9nYW5yeSIsImEiOiJjbHMwajM2NXIwMWRnMmtsZDI2YWlxNHNjIn0.hj-yWC3dV-QiBbQzZX54Pg'
 
-const dashboardUI = useDashboardUIStore();
+const store = useDashboardUIStore();
+const { imageLayerVisible, eventLayerVisible, timeRangeValue } = storeToRefs(store)
 const popUpActive = ref(false)
 const popUpProperties = ref({})
 let eventLayer;
 let imageLayer;
 let map
-
-const calculateOpacity = (year, range) => {
-  const [minYear, maxYear] = range;
-  return (year >= minYear && year <= maxYear) ? 255 : 0;  // 255 for opaque, 0 for transparent
-};
 
 
 onMounted(async () => {
@@ -36,30 +31,35 @@ onMounted(async () => {
   addImage()
 })
 
-watch(() => dashboardUI.imageLayerVisible, (newVisibility) => {
-    if (imageLayer) {
-        imageLayer.setProps({ visible: newVisibility });
-    }
-}, { immediate: true });
-
-watch(() => dashboardUI.eventLayerVisible, (newVisibility) => {
-    if (eventLayer) {
-        eventLayer.setProps({ visible: newVisibility });
-    }
-}, { immediate: true });
-
-watch(() => dashboardUI.timeRangeValue, (newRange) => {
-  if (eventLayer) {
-    eventLayer.setProps({
-      getColor: (d) => [255, 0, 0, calculateOpacity(parseInt(d.YEAR), newRange)]
-    });
-  }
+watch(imageLayerVisible, (newVisibility) => {
   if (imageLayer) {
-    imageLayer.setProps({
-      getColor: (d) => [0, 255, 0, calculateOpacity(parseInt(d.YEAR), newRange)]
-    });
+    imageLayer.setProps({ visible: newVisibility });
+    console.log("Image Layer Visibility Updated:", newVisibility);
   }
+}, { immediate: true });
+
+watch(eventLayerVisible, (newVisibility) => {
+  if (eventLayer) {
+    eventLayer.setProps({ visible: newVisibility });
+    console.log("Event Layer Visibility Updated:", newVisibility);
+  }
+}, { immediate: true });
+
+watch(timeRangeValue, (newValue) => {
+  console.log("Slider changed to:", newValue);
+  store.setTimeRangeValue(newValue);
 }, { deep: true });
+
+//Map Opacity
+const layerOpacity = ref(0); 
+const updateOpacity = () => {
+    console.log("Updating opacity to:", layerOpacity.value); // Debugging line
+    const layerId = '1839';
+    if (map.getLayer(layerId)) {
+        map.setPaintProperty(layerId, 'raster-opacity', parseFloat(layerOpacity.value));
+        console.log(`Opacity set for ${layerId}`); // Confirm operation
+    }
+};
 
 /***
  * Loads mapbox map and Deck.gl
@@ -71,7 +71,7 @@ const loadMapDraw = () => {
   mapboxgl.accessToken = accessToken
 
   // 3) Initialize the map
-  console.log('creating map')
+  console.log('creating map');
   map = new mapboxgl.Map({
     container: 'main-container',
     style: 'mapbox://styles/hoganry/cluwz0ht400hb01pe9e8x6qp9',
@@ -79,18 +79,31 @@ const loadMapDraw = () => {
     zoom: 16, // starting zoom level
     attributionControl: false,
     doubleClickZoom: false
-  })
+  });
 
   map.on('load', () => {
-    const firstLabelLayerId = map
-      .getStyle()
-      .layers.find((layer) => layer.type === 'symbol').id
-    console.log('loaded.....')
-  })
-}
+    // Add your custom raster layer beneath the icon layers
+    map.addLayer({
+      id: '1839',
+      type: 'raster', // Adjust type based on your layer type
+      source: {
+        type: 'raster',
+        url: 'mapbox://hoganry.1gcfgvhx',
+        tileSize: 256,
+      },
+      layout: {
+        visibility: 'visible'
+      },
+      paint: {
+        'raster-opacity': 0,
+      },
+    }, 'EventLayer');
+  });
+};
+
 
 const addEvent = async () => {
-  const eventsData = await csv('csv/DB_0414_events.csv')
+  const eventsData = await csv('csv/DB_0421_events.csv')
   console.log(eventsData)
 
   map.addLayer(
@@ -99,15 +112,13 @@ const addEvent = async () => {
       type: IconLayer,
       data: eventsData,
       getColor: (d) => {
-        const opacity = calculateOpacity(parseInt(d.YEAR), dashboardUI.timeRangeValue);
-        return [255, 0, 0, opacity]; 
-      },
+    const year = parseInt(d.YEAR);
+    
+    return year >= timeRangeValue.value[0] && year <= timeRangeValue.value[1] ? [37, 166, 154, 255] : [37, 166, 154, 0];
+},
       getIcon: (d) => 'marker',
       getPosition: (d) => {
-        console.log(d, 'ddddd', [
-          -1 * parseFloat(d['LONGITUDE']),
-          parseFloat(d['LATITUDE']),
-        ]) ///d.coordinates
+        
         return [-1 * parseFloat(d['LONGITUDE']), parseFloat(d['LATITUDE'])]
       },
       getSize: 50,
@@ -115,6 +126,7 @@ const addEvent = async () => {
         'https://raw.githubusercontent.com/visgl/deck.gl-data/master/website/icon-atlas.png',
       iconMapping:
         'https://raw.githubusercontent.com/visgl/deck.gl-data/master/website/icon-atlas.json',
+        visible: eventLayerVisible.value,
       pickable: true,
       onClick: (info) => {
         popUpActive.value = !popUpActive.value
@@ -127,7 +139,7 @@ const addEvent = async () => {
 }
 
 const addImage = async () => {
-  const imagesData = await csv('csv/DB_0416_images.csv')
+  const imagesData = await csv('csv/DB_0421_images.csv')
 
   map.addLayer(
     imageLayer = new MapboxLayer({
@@ -135,9 +147,10 @@ const addImage = async () => {
       type: IconLayer,
       data: imagesData,
       getColor: (d) => {
-        const opacity = calculateOpacity(parseInt(d.YEAR), dashboardUI.timeRangeValue);
-        return [255, 0, 0, opacity]; 
-      },
+    const year = parseInt(d.YEAR);
+   
+    return year >= timeRangeValue.value[0] && year <= timeRangeValue.value[1] ? [37, 166, 154, 255] : [37, 166, 154, 0];
+},
       getIcon: (d) => 'marker',
       getPosition: (d) => {
         console.log(d, 'ddddd', [
@@ -151,7 +164,7 @@ const addImage = async () => {
         'https://raw.githubusercontent.com/visgl/deck.gl-data/master/website/icon-atlas.png',
       iconMapping:
         'https://raw.githubusercontent.com/visgl/deck.gl-data/master/website/icon-atlas.json',
-        visible: dashboardUI.imageLayerVisible,
+        visible: imageLayerVisible.value,
         pickable: true,
       onClick: (info) => {
         popUpActive.value = !popUpActive.value
@@ -171,13 +184,71 @@ const addImage = async () => {
 <template>
   <main id="main-container" />
   <PopUp v-if="popUpActive" :pop-up-properties="popUpProperties" />
+  <div class="control-container">
+            <label for="opacity-slider">1839 City of Boston Map Opacity</label>
+            <input type="range" min="0" max="1" step="0.1" v-model="layerOpacity" @input="updateOpacity"
+                class="opacity-slider" id="opacity-slider">
+        </div>
 </template>
 
-<style lang="postcss" scoped>
+<style  scoped>
 #main-container {
   width: 100%;
   height: calc(100vh - 60px);
   margin: 0;
   flex-direction: column;
+}
+
+.control-container {
+  position: absolute;
+  bottom: 20px;
+  right: 20px;
+  z-index: 10;
+  background-color: white;
+  padding: 10px;
+  border-radius: 10px;
+  color: black;
+  margin-bottom: 10px;
+  align-items: center;
+}
+
+.control-container div {
+  margin-bottom: 10px;
+}
+
+.control-container label {
+  display: block;
+  margin-bottom: 5px;
+}
+
+.opacity-slider {
+  width: 200px;
+  cursor: pointer;
+  -webkit-appearance: none; 
+  appearance: none;
+  background: #d3d3d3; 
+  outline: none;
+  transition: opacity .2s;
+  border-radius: 10px;
+
+}
+
+
+.opacity-slider::-webkit-slider-thumb {
+  -webkit-appearance: none; /* Override default look */
+  appearance: none;
+  background: #25A69A; /* Teal handle */
+  width: 15px;
+  height: 15px;
+  border-radius: 50%;
+  cursor: pointer;
+}
+
+.opacity-slider::-moz-range-thumb {
+  background: #25A69A; /* Teal handle */
+  width: 15px;
+  height: 15px;
+  border-radius: 50%;
+  cursor: pointer;
 }
 </style>

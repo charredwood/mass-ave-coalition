@@ -1,50 +1,45 @@
 <template>
-  <div class="popup" :style="{ left: popUpProperties.x + 'px', top: popUpProperties.y - height + 'px' }">
-    <div class="popupHeader">
-      <button class="close-button" onclick="closePopup()">[Close]</button>
-      <p class="dateStyle">{{ popUpProperties.object['YEAR'] }}</p>
-      <p class="titleStyle">
-        {{ popUpProperties.object['EVENT_NAME'] }}
-        {{ popUpProperties.object['TITLE'] }}
-      </p>
-    </div>
-    <div class="popupBody">
-      <div>
-        <img
-          :src="popUpProperties.object['IMG_SOURCE']"
-          style="width: 100%; height: auto"
-        />
+  <div class="overlay" v-if="isPopupVisible" @click="closePopup">
+    <div class="popup" :style="{ left: popUpProperties.x + 'px', top: popUpProperties.y - height + 'px' }" @click.stop>
+      <div class="popupHeader">
+        <button class="close-button" @click="closePopup">[Close]</button>
+        <p class="dateStyle">{{ popUpProperties.object['YEAR'] }}</p>
+        <p class="titleStyle">
+          {{ popUpProperties.object['EVENT_NAME'] }}
+          {{ popUpProperties.object['TITLE'] }}
+        </p>
       </div>
-      <div class="scrollableText">
-        <p class="bodySpacing">{{ popUpProperties.object['DESCRIPTION'] }}</p>
+      <div class="popupBody">
+        <div class="scrollableImage">
+          <img :src="popUpProperties.object['IMG_SOURCE']" style="width: auto; height: 100%" />
+        </div>
+        <div class="scrollableText">
+          <p class="bodySpacing">{{ popUpProperties.object['DESCRIPTION'] }}</p>
+        </div>
+        <p class="bodySpacing">
+          <b style="color: #25a69a">Location </b>
+          {{ popUpProperties.object['LOCATION_NAME'] }} <br />
+          {{ popUpProperties.object['ADDRESS'] }}
+        </p>
+        <p>Source: {{ popUpProperties.object['SOURCE_NAME'] }}</p>
       </div>
-      <p class="bodySpacing">
-        <b style="color: #25a69a">Location </b>
-        {{ popUpProperties.object['LOCATION_NAME'] }} <br />
-        {{ popUpProperties.object['ADDRESS'] }}
-      </p>
-      <p>Source: {{ popUpProperties.object['SOURCE_NAME'] }}</p>
     </div>
   </div>
 </template>
 
 <script setup>
-function openPopup(title, message) {
-  state.title = title
-  state.message = message
-  state.showPopup = true
-}
-
-function closePopup() {
-  state.showPopup = false
-}
+import { ref } from 'vue';
 
 const props = defineProps({
-  popUpProperties: Object,
+  popUpProperties: Object
 });
 
-const height = 25
+const isPopupVisible = ref(true);
+const height = 25;
 
+function closePopup() {
+  isPopupVisible.value = false;
+}
 </script>
 
 <style scoped>
@@ -98,23 +93,65 @@ const height = 25
   scrollbar-arrow-color: transparent;
 
   /* Custom scrollbar styles */
-  scrollbar-color: #25a69a transparent; /* thumb and track color */
+  scrollbar-color: #25a69a transparent;
+  /* thumb and track color */
   scrollbar-width: thin;
 }
 
 /* For Webkit browsers (Chrome, Safari) */
 .scrollableText::-webkit-scrollbar {
-  width: 8px; /* width of the entire scrollbar */
+  width: 8px;
+  /* width of the entire scrollbar */
 }
 
 .scrollableText::-webkit-scrollbar-track {
-  background: transparent; /* color of the tracking area */
+  background: transparent;
+  /* color of the tracking area */
 }
 
 .scrollableText::-webkit-scrollbar-thumb {
-  background-color: #25a69a; /* color of the scroll thumb */
-  border-radius: 20px; /* roundness of the scroll thumb */
-  border: 3px solid transparent; /* creates padding around scroll thumb */
+  background-color: #25a69a;
+  /* color of the scroll thumb */
+  border-radius: 20px;
+  /* roundness of the scroll thumb */
+  border: 3px solid transparent;
+  /* creates padding around scroll thumb */
+}
+
+.scrollableImage {
+  max-height: 40vh;
+  overflow-y: auto;
+  margin-bottom: 10px;
+  padding-bottom: 10px;
+
+
+  /* Hide scrollbar arrows (buttons) */
+  scrollbar-arrow-color: transparent;
+
+  /* Custom scrollbar styles */
+  scrollbar-color: #25a69a transparent;
+  /* thumb and track color */
+  scrollbar-width: thin;
+}
+
+/* For Webkit browsers (Chrome, Safari) */
+.scrollableImage::-webkit-scrollbar {
+  width: 8px;
+  /* width of the entire scrollbar */
+}
+
+.scrollableImage::-webkit-scrollbar-track {
+  background: transparent;
+  /* color of the tracking area */
+}
+
+.scrollableImage::-webkit-scrollbar-thumb {
+  background-color: #25a69a;
+  /* color of the scroll thumb */
+  border-radius: 20px;
+  /* roundness of the scroll thumb */
+  border: 3px solid transparent;
+  /* creates padding around scroll thumb */
 }
 
 .bodySpacing {
