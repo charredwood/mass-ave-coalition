@@ -4,9 +4,11 @@ export const useDashboardUIStore = defineStore('dashboardUI', {
   state: () => ({
     imageLayerVisible: true,
     eventLayerVisible: true,
-    timeRangeValue: [1800, 1950],
+    timeRangeValue: [1800, 1910],
 
   }),
+
+
   actions: {
     toggleImageLayerVisibility() {
       this.imageLayerVisible = !this.imageLayerVisible;
@@ -17,6 +19,5 @@ export const useDashboardUIStore = defineStore('dashboardUI', {
     setTimeRangeValue(newRange) {
       this.timeRangeValue = newRange;
     }
-
   }
 });
