@@ -1,35 +1,65 @@
 <script setup>
 // IMPORTS
+import { onMounted, watch } from 'vue';
 import { csv } from 'd3'
 import { MapboxLayer } from '@deck.gl/mapbox'
 import { GeoJsonLayer } from '@deck.gl/layers'
 import { IconLayer } from '@deck.gl/layers'
 import 'element-plus/dist/index.css'
-import PopUp from '~/Components/PopUp.vue'
+import PopUp from '~/components/PopUp.vue'
+import { ref } from 'vue';
+import { useDashboardUIStore } from '~/stores/dashboardUI'; 
+
 
 // Mapbox imports
 import mapboxgl from 'mapbox-gl'
 
 const accessToken =
   'pk.eyJ1IjoiaG9nYW5yeSIsImEiOiJjbHMwajM2NXIwMWRnMmtsZDI2YWlxNHNjIn0.hj-yWC3dV-QiBbQzZX54Pg'
-<<<<<<< Updated upstream
-=======
 
->>>>>>> Stashed changes
+const dashboardUI = useDashboardUIStore();
 const popUpActive = ref(false)
-
-const popUpProperties = ref({
-  title: 'Test',
-  description: 'This is a Test',
-})
-
+const popUpProperties = ref({})
+let eventLayer;
+let imageLayer;
 let map
+
+const calculateOpacity = (year, range) => {
+  const [minYear, maxYear] = range;
+  return (year >= minYear && year <= maxYear) ? 255 : 0;  // 255 for opaque, 0 for transparent
+};
+
 
 onMounted(async () => {
   loadMapDraw()
   addEvent()
   addImage()
 })
+
+watch(() => dashboardUI.imageLayerVisible, (newVisibility) => {
+    if (imageLayer) {
+        imageLayer.setProps({ visible: newVisibility });
+    }
+}, { immediate: true });
+
+watch(() => dashboardUI.eventLayerVisible, (newVisibility) => {
+    if (eventLayer) {
+        eventLayer.setProps({ visible: newVisibility });
+    }
+}, { immediate: true });
+
+watch(() => dashboardUI.timeRangeValue, (newRange) => {
+  if (eventLayer) {
+    eventLayer.setProps({
+      getColor: (d) => [255, 0, 0, calculateOpacity(parseInt(d.YEAR), newRange)]
+    });
+  }
+  if (imageLayer) {
+    imageLayer.setProps({
+      getColor: (d) => [0, 255, 0, calculateOpacity(parseInt(d.YEAR), newRange)]
+    });
+  }
+}, { deep: true });
 
 /***
  * Loads mapbox map and Deck.gl
@@ -44,11 +74,11 @@ const loadMapDraw = () => {
   console.log('creating map')
   map = new mapboxgl.Map({
     container: 'main-container',
-    style: 'mapbox://styles/hoganry/clu8tr3m400kt01p8dqowcdaf',
+    style: 'mapbox://styles/hoganry/cluwz0ht400hb01pe9e8x6qp9',
     center: [-71.078592, 42.337496], // longitude, latitude
-    zoom: 17, // starting zoom level
-    pitch: 37.5,
+    zoom: 16, // starting zoom level
     attributionControl: false,
+    doubleClickZoom: false
   })
 
   map.on('load', () => {
@@ -61,18 +91,17 @@ const loadMapDraw = () => {
 
 const addEvent = async () => {
   const eventsData = await csv('csv/DB_0414_events.csv')
+  console.log(eventsData)
 
   map.addLayer(
-    new MapboxLayer({
+   eventLayer = new MapboxLayer({
       id: 'EventLayer',
       type: IconLayer,
-<<<<<<< Updated upstream
-      data: imagesData,
-      getColor: (d) => [37, 166, 154],
-=======
       data: eventsData,
-      getColor: (d) => [255, 0, 0],
->>>>>>> Stashed changes
+      getColor: (d) => {
+        const opacity = calculateOpacity(parseInt(d.YEAR), dashboardUI.timeRangeValue);
+        return [255, 0, 0, opacity]; 
+      },
       getIcon: (d) => 'marker',
       getPosition: (d) => {
         console.log(d, 'ddddd', [
@@ -81,7 +110,7 @@ const addEvent = async () => {
         ]) ///d.coordinates
         return [-1 * parseFloat(d['LONGITUDE']), parseFloat(d['LATITUDE'])]
       },
-      getSize: 80,
+      getSize: 50,
       iconAtlas:
         'https://raw.githubusercontent.com/visgl/deck.gl-data/master/website/icon-atlas.png',
       iconMapping:
@@ -97,17 +126,18 @@ const addEvent = async () => {
   )
 }
 
-<<<<<<< Updated upstream
-=======
 const addImage = async () => {
   const imagesData = await csv('csv/DB_0416_images.csv')
 
   map.addLayer(
-    new MapboxLayer({
+    imageLayer = new MapboxLayer({
       id: 'ImageLayer',
       type: IconLayer,
       data: imagesData,
-      getColor: (d) => [0, 255, 0],
+      getColor: (d) => {
+        const opacity = calculateOpacity(parseInt(d.YEAR), dashboardUI.timeRangeValue);
+        return [255, 0, 0, opacity]; 
+      },
       getIcon: (d) => 'marker',
       getPosition: (d) => {
         console.log(d, 'ddddd', [
@@ -116,22 +146,26 @@ const addImage = async () => {
         ]) ///d.coordinates
         return [-1 * parseFloat(d['LONGITUDE']), parseFloat(d['LATITUDE'])]
       },
-      getSize: 80,
+      getSize: 50,
       iconAtlas:
         'https://raw.githubusercontent.com/visgl/deck.gl-data/master/website/icon-atlas.png',
       iconMapping:
         'https://raw.githubusercontent.com/visgl/deck.gl-data/master/website/icon-atlas.json',
-      pickable: true,
+        visible: dashboardUI.imageLayerVisible,
+        pickable: true,
       onClick: (info) => {
         popUpActive.value = !popUpActive.value
         popUpProperties.value = info
         console.log('Clicked on', info.object, info)
         console.log(popUpActive.value)
+      
       },
     })
+    
   )
 }
->>>>>>> Stashed changes
+
+
 </script>
 
 <template>
@@ -142,7 +176,7 @@ const addImage = async () => {
 <style lang="postcss" scoped>
 #main-container {
   width: 100%;
-  min-height: 100vh;
+  height: calc(100vh - 60px);
   margin: 0;
   flex-direction: column;
 }

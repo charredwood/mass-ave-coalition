@@ -1,10 +1,5 @@
 <template>
-<<<<<<< Updated upstream
   <div class="popup" :style="{ left: popUpProperties.x + 'px', top: popUpProperties.y - height + 'px' }">
-    <h2>{{ popUpProperties.object['TITLE'] }}</h2>
-    <p>{{ popUpProperties.object['DESCRIPTION'] }}</p>
-=======
-  <div class="popup">
     <div class="popupHeader">
       <button class="close-button" onclick="closePopup()">[Close]</button>
       <p class="dateStyle">{{ popUpProperties.object['YEAR'] }}</p>
@@ -20,7 +15,9 @@
           style="width: 100%; height: auto"
         />
       </div>
-      <p class="bodySpacing">{{ popUpProperties.object['DESCRIPTION'] }}</p>
+      <div class="scrollableText">
+        <p class="bodySpacing">{{ popUpProperties.object['DESCRIPTION'] }}</p>
+      </div>
       <p class="bodySpacing">
         <b style="color: #25a69a">Location </b>
         {{ popUpProperties.object['LOCATION_NAME'] }} <br />
@@ -28,20 +25,13 @@
       </p>
       <p>Source: {{ popUpProperties.object['SOURCE_NAME'] }}</p>
     </div>
->>>>>>> Stashed changes
   </div>
 </template>
 
 <script setup>
-<<<<<<< Updated upstream
-
-
-function openPopup() {
-=======
 function openPopup(title, message) {
   state.title = title
   state.message = message
->>>>>>> Stashed changes
   state.showPopup = true
 }
 
@@ -51,31 +41,28 @@ function closePopup() {
 
 const props = defineProps({
   popUpProperties: Object,
-<<<<<<< Updated upstream
 });
 
 const height = 25
-=======
-})
->>>>>>> Stashed changes
+
 </script>
 
 <style scoped>
 .popup {
   position: absolute;
-  top: 45%;
+  top: 50%;
   left: 50%;
-  width: 300px;
-<<<<<<< Updated upstream
+  width: 450px;
   height: auto;
   transform: translate(-50%, -50%);
-  background: red;
+  background: white;
   padding: 20px;
-  border: 1px solid black;
-  z-index: 1000;
-
+  z-index: 10;
+  border-radius: 20px;
+  box-shadow: 0px 2px 16px rgba(0, 0, 0, 0.5);
+  max-height: 70vh;
+  overflow: hidden;
 }
-
 
 .popupHeader {
   position: sticky;
@@ -98,13 +85,40 @@ const height = 25
   font-weight: normal;
   display: flex;
   flex-direction: column;
-  overflow: scroll;
+}
+
+.scrollableText {
+  max-height: 40vh;
+  overflow-y: auto;
+  margin-bottom: 10px;
+  padding-bottom: 10px;
+  border-bottom: 1px solid #d3d3d3;
+
+  /* Hide scrollbar arrows (buttons) */
+  scrollbar-arrow-color: transparent;
+
+  /* Custom scrollbar styles */
+  scrollbar-color: #25a69a transparent; /* thumb and track color */
+  scrollbar-width: thin;
+}
+
+/* For Webkit browsers (Chrome, Safari) */
+.scrollableText::-webkit-scrollbar {
+  width: 8px; /* width of the entire scrollbar */
+}
+
+.scrollableText::-webkit-scrollbar-track {
+  background: transparent; /* color of the tracking area */
+}
+
+.scrollableText::-webkit-scrollbar-thumb {
+  background-color: #25a69a; /* color of the scroll thumb */
+  border-radius: 20px; /* roundness of the scroll thumb */
+  border: 3px solid transparent; /* creates padding around scroll thumb */
 }
 
 .bodySpacing {
   margin-bottom: 10px;
-  padding-bottom: 10px;
-  border-bottom: 1px solid #d3d3d3;
 }
 
 .close-button {
@@ -124,6 +138,5 @@ const height = 25
 .titleStyle {
   font-size: 1em;
   font-weight: bold;
->>>>>>> Stashed changes
 }
 </style>
