@@ -7,6 +7,7 @@ import { GeoJsonLayer } from '@deck.gl/layers'
 import { IconLayer } from '@deck.gl/layers'
 import 'element-plus/dist/index.css'
 import { useDashboardUIStore } from '~/stores/dashboardUI'
+import PopUp from './PopUp.vue'
 
 // Mapbox imports
 import mapboxgl from 'mapbox-gl'
