@@ -1,6 +1,13 @@
 <template>
-  <div class="overlay" v-if="isPopupVisible" @click="closePopup">
-    <div class="popup" :style="{ left: popUpProperties.x + 'px', top: popUpProperties.y - height + 'px' }" @click.stop>
+  <div v-if="isPopupVisible" class="overlay" @click="closePopup">
+    <div
+      class="popup"
+      :style="{
+        left: x + 'px',
+        top: y - height + 'px',
+      }"
+      @click.stop
+    >
       <div class="popupHeader">
         <button class="close-button" @click="closePopup">[Close]</button>
         <p class="dateStyle">{{ popUpProperties.object['YEAR'] }}</p>
@@ -11,7 +18,10 @@
       </div>
       <div class="popupBody">
         <div class="scrollableImage">
-          <img :src="popUpProperties.object['IMG_SOURCE']" style="width: auto; height: 100%" />
+          <img
+            :src="popUpProperties.object['IMG_SOURCE']"
+            style="width: auto; height: 100%"
+          />
         </div>
         <div class="scrollableText">
           <p class="bodySpacing">{{ popUpProperties.object['DESCRIPTION'] }}</p>
@@ -28,18 +38,50 @@
 </template>
 
 <script setup>
-import { ref } from 'vue';
+import { ref, computed } from 'vue'
 
 const props = defineProps({
-  popUpProperties: Object
-});
+  popUpProperties: Object,
+})
 
-const isPopupVisible = ref(true);
-const height = 25;
+const isPopupVisible = ref(true)
+const height = 25
 
 function closePopup() {
-  isPopupVisible.value = false;
+  isPopupVisible.value = false
 }
+
+const popupStyle = computed(() => {
+  let x = popUpProperties.x
+  let y = popUpProperties.y - height
+
+  // Get viewport dimensions
+  const viewportWidth = window.innerWidth
+  const viewportHeight = window.innerHeight
+
+  // Popup dimensions
+  const popupWidth = 450
+  const popupHeight = 0 // Approximate height; unrelated to the actual size
+
+  // Adjust x and y to keep the popup within the viewport
+  if (x + popupWidth > viewportWidth) {
+    x = viewportWidth - popupWidth - 10 // 10px margin
+  }
+  if (x < 0) {
+    x = 10 // 10px margin
+  }
+  if (y + popupHeight > viewportHeight) {
+    y = viewportHeight - popupHeight - 10 // 10px margin
+  }
+  if (y < 0) {
+    y = 10 // 10px margin
+  }
+
+  return {
+    left: x + 'px',
+    top: y + 'px',
+  }
+})
 </script>
 
 <style scoped>
@@ -55,8 +97,10 @@ function closePopup() {
   z-index: 10;
   border-radius: 20px;
   box-shadow: 0px 2px 16px rgba(0, 0, 0, 0.5);
-  max-height: 70vh;
+  max-height: auto;
   overflow: scroll;
+  scrollbar-color: #25a69a transparent;
+  scrollbar-width: thin;
 }
 
 .popupHeader {
@@ -94,7 +138,6 @@ function closePopup() {
 
   /* Custom scrollbar styles */
   scrollbar-color: #25a69a transparent;
-  /* thumb and track color */
   scrollbar-width: thin;
 }
 
@@ -120,13 +163,9 @@ function closePopup() {
 
 .scrollableImage {
   max-height: 40vh;
-  overflow-y: auto;
+  overflow-y: scroll;
   margin-bottom: 10px;
   padding-bottom: 10px;
-
-
-  /* Hide scrollbar arrows (buttons) */
-  scrollbar-arrow-color: transparent;
 
   /* Custom scrollbar styles */
   scrollbar-color: #25a69a transparent;
@@ -141,7 +180,7 @@ function closePopup() {
 }
 
 .scrollableImage::-webkit-scrollbar-track {
-  background: transparent;
+  background: white;
   /* color of the tracking area */
 }
 
