@@ -56,7 +56,7 @@ function closePopup() {
   border-radius: 20px;
   box-shadow: 0px 2px 16px rgba(0, 0, 0, 0.5);
   max-height: 70vh;
-  overflow: hidden;
+  overflow: scroll;
 }
 
 .popupHeader {
