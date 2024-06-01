@@ -1,15 +1,29 @@
+<template>
+  <main id="main-container" />
+  <PopUp v-if="popUpActive" :pop-up-properties="popUpProperties" />
+  <div class="control-container">
+    <label for="opacity-slider">1839 City of Boston Map Opacity</label>
+    <input
+      id="opacity-slider"
+      v-model="layerOpacity"
+      type="range"
+      min="0"
+      max="1"
+      step="0.1"
+      class="opacity-slider"
+      @input="updateOpacity"
+    />
+  </div>
+</template>
+
 <script setup>
-// IMPORTS
 import { ref, onMounted, watch } from 'vue'
 import { csv } from 'd3'
 import { MapboxLayer } from '@deck.gl/mapbox'
-import { GeoJsonLayer } from '@deck.gl/layers'
 import { IconLayer } from '@deck.gl/layers'
 import 'element-plus/dist/index.css'
 import { useDashboardUIStore } from '~/stores/dashboardUI'
 import PopUp from './PopUp.vue'
-
-// Mapbox imports
 import mapboxgl from 'mapbox-gl'
 
 const accessToken =
@@ -23,11 +37,21 @@ const popUpProperties = ref({})
 let eventLayer
 let imageLayer
 let map
+let opacity = ref(1)
+
+const pinOpacity = (d) => {
+  const year = parseInt(d.YEAR)
+  return year >= timeRangeValue.value[0] && year <= timeRangeValue.value[1]
+    ? 1
+    : 0
+}
+
+const layerOpacity = ref(0)
 
 onMounted(async () => {
   loadMapDraw()
-  addEvent()
-  addImage()
+  await addEvent()
+  await addImage()
 })
 
 watch(
@@ -54,17 +78,30 @@ watch(
 
 watch(
   timeRangeValue,
-  (newValue) => {
-    console.log('Slider changed to:', newValue)
-    store.setTimeRangeValue(newValue)
+  (newValue, oldValue) => {
+    if (newValue[0] !== oldValue[0] || newValue[1] !== oldValue[1]) {
+      console.log('Slider changed to:', newValue)
+      store.setTimeRangeValue(newValue)
+      console.log(opacity.value)
+
+      // Update event layer
+      if (eventLayer) {
+        map.triggerRepaint()
+        eventLayer.setProps({ getColor: pinOpacity })
+      }
+
+      // Update image layer
+      if (imageLayer) {
+        map.triggerRepaint()
+        imageLayer.setProps({ getColor: pinOpacity }) // Corrected line
+      }
+    }
   },
   { deep: true }
 )
 
-//Map Opacity
-const layerOpacity = ref(0)
 const updateOpacity = () => {
-  console.log('Updating opacity to:', layerOpacity.value) // Debugging line
+  console.log('Updating opacity to:', layerOpacity.value)
   const layerId = '1839'
   if (map.getLayer(layerId)) {
     map.setPaintProperty(
@@ -72,36 +109,30 @@ const updateOpacity = () => {
       'raster-opacity',
       parseFloat(layerOpacity.value)
     )
-    console.log(`Opacity set for ${layerId}`) // Confirm operation
+    console.log(`Opacity set for ${layerId}`)
   }
 }
 
-/***
- * Loads mapbox map and Deck.gl
- */
 const loadMapDraw = () => {
   let mouseLocation = false
 
-  // 2) mapbox token
   mapboxgl.accessToken = accessToken
 
-  // 3) Initialize the map
   console.log('creating map')
   map = new mapboxgl.Map({
     container: 'main-container',
     style: 'mapbox://styles/hoganry/cluwz0ht400hb01pe9e8x6qp9',
-    center: [-71.078592, 42.337496], // longitude, latitude
-    zoom: 16, // starting zoom level
+    center: [-71.078592, 42.337496],
+    zoom: 16,
     attributionControl: false,
     doubleClickZoom: false,
   })
 
   map.on('load', () => {
-    // Add your custom raster layer beneath the icon layers
     map.addLayer(
       {
         id: '1839',
-        type: 'raster', // Adjust type based on your layer type
+        type: 'raster',
         source: {
           type: 'raster',
           url: 'mapbox://hoganry.1gcfgvhx',
@@ -123,99 +154,69 @@ const addEvent = async () => {
   const eventsData = await csv('csv/DB_0421_events.csv')
   console.log(eventsData)
 
-  map.addLayer(
-    (eventLayer = new MapboxLayer({
-      id: 'EventLayer',
-      type: IconLayer,
-      data: eventsData,
-      getColor: (d) => {
-        const year = parseInt(d.YEAR)
+  eventLayer = new MapboxLayer({
+    id: 'EventLayer',
+    type: IconLayer,
+    data: eventsData,
+    getColor: (d) => {
+      const year = parseInt(d.YEAR)
+      return [37, 166, 154, 255 * opacity.value]
+    },
+    getIcon: (d) => 'marker',
+    getPosition: (d) => {
+      return [-1 * parseFloat(d['LONGITUDE']), parseFloat(d['LATITUDE'])]
+    },
+    getSize: 50,
+    iconAtlas:
+      'https://raw.githubusercontent.com/visgl/deck.gl-data/master/website/icon-atlas.png',
+    iconMapping:
+      'https://raw.githubusercontent.com/visgl/deck.gl-data/master/website/icon-atlas.json',
+    visible: eventLayerVisible.value,
+    pickable: true,
+    onClick: (info) => {
+      popUpActive.value = !popUpActive.value
+      popUpProperties.value = info
+      console.log('Clicked on', info.object, info)
+      console.log(popUpActive.value)
+    },
+  })
 
-        return year >= timeRangeValue.value[0] &&
-          year <= timeRangeValue.value[1]
-          ? [37, 166, 154, 255]
-          : [37, 166, 154, 0]
-      },
-      getIcon: (d) => 'marker',
-      getPosition: (d) => {
-        return [-1 * parseFloat(d['LONGITUDE']), parseFloat(d['LATITUDE'])]
-      },
-      getSize: 50,
-      iconAtlas:
-        'https://raw.githubusercontent.com/visgl/deck.gl-data/master/website/icon-atlas.png',
-      iconMapping:
-        'https://raw.githubusercontent.com/visgl/deck.gl-data/master/website/icon-atlas.json',
-      visible: eventLayerVisible.value,
-      pickable: true,
-      onClick: (info) => {
-        popUpActive.value = !popUpActive.value
-        popUpProperties.value = info
-        console.log('Clicked on', info.object, info)
-        console.log(popUpActive.value)
-      },
-    }))
-  )
+  map.addLayer(eventLayer)
 }
 
 const addImage = async () => {
   const imagesData = await csv('csv/DB_0421_images.csv')
 
-  map.addLayer(
-    (imageLayer = new MapboxLayer({
-      id: 'ImageLayer',
-      type: IconLayer,
-      data: imagesData,
-      getColor: (d) => {
-        const year = parseInt(d.YEAR)
+  imageLayer = new MapboxLayer({
+    id: 'ImageLayer',
+    type: IconLayer,
+    data: imagesData,
+    getColor: (d) => {
+      const year = parseInt(d.YEAR)
+      return [37, 166, 154, 255 * opacity.value]
+    },
+    getIcon: (d) => 'marker',
+    getPosition: (d) => {
+      return [-1 * parseFloat(d['LONGITUDE']), parseFloat(d['LATITUDE'])]
+    },
+    getSize: 50,
+    iconAtlas:
+      'https://raw.githubusercontent.com/visgl/deck.gl-data/master/website/icon-atlas.png',
+    iconMapping:
+      'https://raw.githubusercontent.com/visgl/deck.gl-data/master/website/icon-atlas.json',
+    visible: imageLayerVisible.value,
+    pickable: true,
+    onClick: (info) => {
+      popUpActive.value = !popUpActive.value
+      popUpProperties.value = info
+      console.log('Clicked on', info.object, info)
+      console.log(popUpActive.value)
+    },
+  })
 
-        return year >= timeRangeValue.value[0] &&
-          year <= timeRangeValue.value[1]
-          ? [37, 166, 154, 255]
-          : [37, 166, 154, 0]
-      },
-      getIcon: (d) => 'marker',
-      getPosition: (d) => {
-        console.log(d, 'ddddd', [
-          -1 * parseFloat(d['LONGITUDE']),
-          parseFloat(d['LATITUDE']),
-        ]) ///d.coordinates
-        return [-1 * parseFloat(d['LONGITUDE']), parseFloat(d['LATITUDE'])]
-      },
-      getSize: 50,
-      iconAtlas:
-        'https://raw.githubusercontent.com/visgl/deck.gl-data/master/website/icon-atlas.png',
-      iconMapping:
-        'https://raw.githubusercontent.com/visgl/deck.gl-data/master/website/icon-atlas.json',
-      visible: imageLayerVisible.value,
-      pickable: true,
-      onClick: (info) => {
-        popUpActive.value = !popUpActive.value
-        popUpProperties.value = info
-        console.log('Clicked on', info.object, info)
-        console.log(popUpActive.value)
-      },
-    }))
-  )
+  map.addLayer(imageLayer)
 }
 </script>
-
-<template>
-  <main id="main-container" />
-  <PopUp v-if="popUpActive" :pop-up-properties="popUpProperties" />
-  <div class="control-container">
-    <label for="opacity-slider">1839 City of Boston Map Opacity</label>
-    <input
-      id="opacity-slider"
-      v-model="layerOpacity"
-      type="range"
-      min="0"
-      max="1"
-      step="0.1"
-      class="opacity-slider"
-      @input="updateOpacity"
-    />
-  </div>
-</template>
 
 <style scoped>
 #main-container {
