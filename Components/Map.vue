@@ -1,6 +1,7 @@
 <template>
   <main id="main-container" />
   <PopUp v-if="popUpActive" :pop-up-properties="popUpProperties" />
+  <FormPopUp v-if="formActive" :location-coordinates="locationCoordinates" />
   <div class="control-container">
     <label for="opacity-slider">1839 City of Boston Map Opacity</label>
     <input
@@ -25,19 +26,28 @@ import 'element-plus/dist/index.css'
 import { useDashboardUIStore } from '~/stores/dashboardUI'
 import PopUp from './PopUp.vue'
 import mapboxgl from 'mapbox-gl'
+import MapboxDraw from '@mapbox/mapbox-gl-draw'
+import FormPopUp from './FormPopUp.vue'
 
 const accessToken =
   'pk.eyJ1IjoiaG9nYW5yeSIsImEiOiJjbHMwajM2NXIwMWRnMmtsZDI2YWlxNHNjIn0.hj-yWC3dV-QiBbQzZX54Pg'
 
 const store = useDashboardUIStore()
-const { imageLayerVisible, eventLayerVisible, timeRangeValue } =
-  storeToRefs(store)
+const {
+  imageLayerVisible,
+  eventLayerVisible,
+  timeRangeValue,
+  map1839Visible,
+  editCapable,
+} = storeToRefs(store)
+
 const popUpActive = ref(false)
 const popUpProperties = ref({})
+const locationCoordinates = ref({})
 let eventLayer
 let imageLayer
 let map
-let opacity = ref(1)
+const formActive = ref(false)
 
 const pinOpacity = (d) => {
   const year = parseInt(d.YEAR)
@@ -54,51 +64,40 @@ onMounted(async () => {
   await addImage()
 })
 
-watch(
-  imageLayerVisible,
-  (newVisibility) => {
-    if (imageLayer) {
-      imageLayer.setProps({ visible: newVisibility })
-      console.log('Image Layer Visibility Updated:', newVisibility)
-    }
-  },
-  { immediate: true }
-)
-
-watch(
-  eventLayerVisible,
-  (newVisibility) => {
-    if (eventLayer) {
-      eventLayer.setProps({ visible: newVisibility })
-      console.log('Event Layer Visibility Updated:', newVisibility)
-    }
-  },
-  { immediate: true }
-)
-
+// need to add a function that updates a layer when the time range changes
 watch(
   timeRangeValue,
   (newValue, oldValue) => {
     if (newValue[0] !== oldValue[0] || newValue[1] !== oldValue[1]) {
       console.log('Slider changed to:', newValue)
       store.setTimeRangeValue(newValue)
-      console.log(opacity.value)
-
-      // Update event layer
-      if (eventLayer) {
-        map.triggerRepaint()
-        eventLayer.setProps({ getColor: pinOpacity })
-      }
-
-      // Update image layer
-      if (imageLayer) {
-        map.triggerRepaint()
-        imageLayer.setProps({ getColor: pinOpacity }) // Corrected line
-      }
     }
   },
   { deep: true }
 )
+
+watch(
+  editCapable,
+  (newEditCapable) => {
+    console.log('Edit Capable:', newEditCapable)
+  },
+  { immediate: true }
+)
+
+const map1839Toggle = () => {
+  console.log('map1839Toggle called') // Debugging line
+  const layerId = '1839'
+  if (map.getLayer(layerId)) {
+    console.log('Layer exists, toggling visibility') // Additional debugging line
+    map.setLayoutProperty(
+      layerId,
+      'visibility',
+      map1839Visible.value ? 'visible' : 'none'
+    )
+  } else {
+    console.log('Layer does not exist') // Debugging line if layer doesn't exist
+  }
+}
 
 const updateOpacity = () => {
   console.log('Updating opacity to:', layerOpacity.value)
@@ -114,8 +113,6 @@ const updateOpacity = () => {
 }
 
 const loadMapDraw = () => {
-  let mouseLocation = false
-
   mapboxgl.accessToken = accessToken
 
   console.log('creating map')
@@ -148,6 +145,62 @@ const loadMapDraw = () => {
       'EventLayer'
     )
   })
+
+  // Edit mode (Add Pins)
+  // define the draw object and style the pin
+  let draw = new MapboxDraw({
+    styles: [
+      {
+        id: 'feature-inactive',
+        type: 'circle',
+        filter: [
+          'all',
+          ['==', '$type', 'Point'],
+          ['==', 'meta', 'feature'],
+          ['==', 'active', 'false'],
+        ],
+        paint: {
+          'circle-radius': 7,
+          'circle-color': 'black',
+        },
+      },
+    ],
+  })
+
+  // activate the form when the user clicks on the map in edit mode
+  // also create a marker on the map where the user clicked
+  map.on('click', (e) => {
+    if (editCapable.value) {
+      console.log('Edit Capable:', editCapable.value)
+      const coordinates = {
+        longitude: e.lngLat['lng'],
+        latitude: e.lngLat['lat'],
+      }
+      console.log('Clicked Location:', coordinates)
+      locationCoordinates.value = coordinates
+      // create the form pop up
+      formActive.value = !formActive.value
+      // let the pin to show up only when the form is active
+      if (formActive.value) {
+        // create a point
+        map.addControl(draw)
+        let feature = {
+          type: 'Point',
+          coordinates: [coordinates.longitude, coordinates.latitude],
+        }
+        let featureIds = draw.add(feature)
+        console.log(featureIds)
+      } else {
+        // remove the point
+        map.removeControl(draw)
+      }
+      // stopping the existing pop up from showing up
+      // popUpActive.value = false
+    } else {
+      // To prevent the pop up to continue showing up when the user turns off the edit mode
+      formActive.value = false
+    }
+  })
 }
 
 const addEvent = async () => {
@@ -160,7 +213,7 @@ const addEvent = async () => {
     data: eventsData,
     getColor: (d) => {
       const year = parseInt(d.YEAR)
-      return [37, 166, 154, 255 * opacity.value]
+      return [37, 166, 154, 255 * pinOpacity.value]
     },
     getIcon: (d) => 'marker',
     getPosition: (d) => {
@@ -178,6 +231,7 @@ const addEvent = async () => {
       popUpProperties.value = info
       console.log('Clicked on', info.object, info)
       console.log(popUpActive.value)
+      console.log(pinOpacity(info.object))
     },
   })
 
@@ -193,7 +247,7 @@ const addImage = async () => {
     data: imagesData,
     getColor: (d) => {
       const year = parseInt(d.YEAR)
-      return [37, 166, 154, 255 * opacity.value]
+      return [37, 166, 154, 255 * pinOpacity.value]
     },
     getIcon: (d) => 'marker',
     getPosition: (d) => {

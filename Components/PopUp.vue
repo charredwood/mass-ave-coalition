@@ -63,18 +63,18 @@ const popupStyle = computed(() => {
   const popupWidth = 450
   const popupHeight = 0 // Approximate height; unrelated to the actual size
 
-  // Adjust x and y to keep the popup within the viewport
+  // Adjust x and y to keep the popup within the viewport, margins are set as 10 px
   if (x + popupWidth > viewportWidth) {
-    x = viewportWidth - popupWidth - 10 // 10px margin
+    x = viewportWidth - popupWidth - 10
   }
   if (x < 0) {
-    x = 10 // 10px margin
+    x = 10
   }
   if (y + popupHeight > viewportHeight) {
-    y = viewportHeight - popupHeight - 10 // 10px margin
+    y = viewportHeight - popupHeight - 10
   }
   if (y < 0) {
-    y = 10 // 10px margin
+    y = 10
   }
 
   return {
