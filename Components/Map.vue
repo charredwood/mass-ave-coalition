@@ -1,7 +1,11 @@
 <template>
   <main id="main-container" />
   <PopUp v-if="popUpActive" :pop-up-properties="popUpProperties" />
-  <FormPopUp v-if="formActive" :location-coordinates="locationCoordinates" />
+  <FormPopUp
+    v-if="formActive"
+    :location-coordinates="locationCoordinates"
+    @updateMap="addNewMarker"
+  />
   <div class="control-container">
     <label for="opacity-slider">1839 City of Boston Map Opacity</label>
     <input
@@ -57,12 +61,6 @@ const pinOpacity = (d) => {
 }
 
 const layerOpacity = ref(0)
-
-onMounted(async () => {
-  loadMapDraw()
-  await addEvent()
-  await addImage()
-})
 
 // need to add a function that updates a layer when the time range changes
 watch(
@@ -270,6 +268,46 @@ const addImage = async () => {
 
   map.addLayer(imageLayer)
 }
+
+const addNewMarker = (markerData) => {
+  console.log('Adding new marker:', markerData)
+
+  const lat = parseFloat(markerData.latitude)
+  const lng = parseFloat(markerData.longitude)
+
+  if (isNaN(lat) || isNaN(lng)) {
+    console.error('Invalid coordinates:', markerData)
+    return
+  }
+
+  const newMarker = new mapboxgl.Marker()
+    .setLngLat([lng, lat])
+    .setPopup(
+      new mapboxgl.Popup().setHTML(
+        `<h3>${markerData.name}</h3>
+         <p>Year: ${markerData.year}</p>
+         <p>Address: ${markerData.address}</p>
+         <p>${markerData.desc}</p>
+         <p>Source: ${markerData.src}</p>`
+      )
+    )
+    .addTo(map)
+
+  console.log('New marker added:', newMarker)
+}
+
+onMounted(async () => {
+  loadMapDraw()
+  await addEvent()
+  await addImage()
+
+  try {
+    const response = await axios.get('/api/getMarkers')
+    response.data.forEach((markerData) => addNewMarker(markerData))
+  } catch (error) {
+    console.error('Error loading markers:', error)
+  }
+})
 </script>
 
 <style scoped>

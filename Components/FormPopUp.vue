@@ -32,21 +32,29 @@
         </el-form-item>
         <span style="color: gray">
           <li>To close this form, click any random point on the map.</li>
-          <li>Click "Add Pins" one more time to stop creating pins and navigate the map.</li>
-          <li>During the beta testing, please avoid creating a new pin on the exact same location of existing pins.</li>
+          <li>
+            Click "Add Pins" one more time to stop creating pins and navigate
+            the map.
+          </li>
+          <li>
+            During the beta testing, please avoid creating a new pin on the
+            exact same location of existing pins.
+          </li>
         </span>
       </el-form>
     </div>
   </div>
 </template>
 
-<script lang="ts" setup>
+<script setup lang="ts">
 import 'element-plus/dist/index.css'
-import { reactive, ref, defineProps } from 'vue'
+import { reactive, ref, defineProps, defineEmits } from 'vue'
 import axios from 'axios'
-import { ElForm, ElFormItem, ElInput, ElButton } from 'element-plus'
+import { ElForm, ElFormItem, ElInput, ElButton, ElMessage } from 'element-plus'
+import { useDashboardUIStore } from '~/stores/dashboardUI'
+import { useNuxtApp } from '#app'
 
-interface RuleForm {
+type RuleForm = {
   name: string
   year: string
   address: string
@@ -63,8 +71,8 @@ const ruleFormRef = ref<InstanceType<typeof ElForm>>()
 const props = defineProps({
   locationCoordinates: {
     type: Object,
-    default: () => ({})
-  }
+    default: () => ({}),
+  },
 })
 const ruleForm = reactive<RuleForm>({
   name: '',
@@ -77,62 +85,112 @@ const ruleForm = reactive<RuleForm>({
   latitude: props.locationCoordinates.latitude || '',
 })
 
+const dashboardUIStore = useDashboardUIStore()
+const emit = defineEmits(['updateMap'])
+
 const rules = reactive({
   name: [
     { required: true, message: 'Event name required', trigger: 'blur' },
-    { max: 100, message: 'The maximum length is 120 characters.', trigger: 'blur' },
+    {
+      max: 100,
+      message: 'The maximum length is 120 characters.',
+      trigger: 'blur',
+    },
   ],
   year: [
-    { required: true, message: 'Event year required (Format: YYYY)', trigger: 'blur' },
+    {
+      required: true,
+      message: 'Event year required (Format: YYYY)',
+      trigger: 'blur',
+    },
     { min: 4, max: 12, message: '(Format: YYYY)', trigger: 'blur' },
   ],
   address: [
-    { required: true, message: '(Format: 123 Main St, City, State, Zip Code)', trigger: 'blur' },
+    {
+      required: true,
+      message: '(Format: 123 Main St, City, State, Zip Code)',
+      trigger: 'blur',
+    },
   ],
   desc: [
     { required: true, message: 'Event description required', trigger: 'blur' },
-    { min: 100, message: 'The minimum length is 100 characters.', trigger: 'blur' },
+    {
+      min: 100,
+      message: 'The minimum length is 100 characters.',
+      trigger: 'blur',
+    },
   ],
   src: [
-    { required: true, message: 'Source required (Type "Unknown" if unclear)', trigger: 'blur' },
-    { max: 80, message: 'The maximum length is 80 characters.', trigger: 'blur' },
+    {
+      required: true,
+      message: 'Source required (Type "Unknown" if unclear)',
+      trigger: 'blur',
+    },
+    {
+      max: 80,
+      message: 'The maximum length is 80 characters.',
+      trigger: 'blur',
+    },
   ],
   longitude: [
     { required: true, message: 'Longitude required', trigger: 'blur' },
   ],
-  latitude: [
-    { required: true, message: 'Latitude required', trigger: 'blur' },
-  ],
+  latitude: [{ required: true, message: 'Latitude required', trigger: 'blur' }],
 })
 
-const submitForm = async (formEl) => {
+const submitForm = async (formEl: InstanceType<typeof ElForm> | null) => {
   if (!formEl) return
   try {
-    await formEl.validate(async (valid) => {
+    await formEl.validate(async (valid: boolean) => {
       if (valid) {
-        const functionUrl = 'https://us-central1-collective-history-435822.cloudfunctions.net/connectSheet';
-        
-        // Send data to the Google Cloud Function
-        await axios.post(functionUrl, ruleForm);
-        
-        console.log('Data submitted successfully');
+        const functionUrl = '/api/connectSheet'
+
+        try {
+          console.log('Sending data:', ruleForm)
+          const response = await axios.post(functionUrl, ruleForm)
+          console.log('Response received:', response.data)
+          ElMessage.success('Pin created successfully!')
+
+          emit('updateMap', {
+            name: ruleForm.name,
+            year: ruleForm.year,
+            address: ruleForm.address,
+            desc: ruleForm.desc,
+            src: ruleForm.src,
+            longitude: ruleForm.longitude,
+            latitude: ruleForm.latitude,
+          })
+
+          resetForm(formEl)
+          dashboardUIStore.toggleEditMode()
+        } catch (error: any) {
+          console.error(
+            'Submission error details:',
+            error.response?.data || error.message
+          )
+          ElMessage.error(
+            `Failed to create pin: ${error.message || 'Unknown error'}`
+          )
+        }
       } else {
-        console.log('Validation Error');
+        console.log('Validation Error')
+        ElMessage.warning('Please fill in all required fields correctly.')
       }
     })
-  } catch (error) {
-    console.error('Submission failed:', error);
+  } catch (error: any) {
+    console.error('Form validation error:', error)
+    ElMessage.error(
+      `An unexpected error occurred: ${error.message || 'Unknown error'}`
+    )
   }
 }
 
-
-const resetForm = (formEl) => {
+const resetForm = (formEl: InstanceType<typeof ElForm> | null) => {
   if (!formEl) return
   formEl.resetFields()
   console.log(ruleForm)
 }
 </script>
-
 
 <style scoped>
 .formBox {

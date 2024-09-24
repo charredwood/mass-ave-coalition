@@ -1,13 +1,17 @@
-<script setup>
+<script setup lang="ts">
 import MainHeader from '~/Components/MainHeader.vue'
 import Sidebar from '~/Components/Sidebar.vue'
-import Map from '~/Components/Map.vue'
+import MapComponent from '~/Components/Map.vue'
+
+defineOptions({
+  name: 'HomePage',
+})
 </script>
 
 <template>
   <MainHeader />
   <Sidebar />
-  <Map />
+  <MapComponent />
 </template>
 
 <style scoped></style>
