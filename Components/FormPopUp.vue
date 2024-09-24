@@ -140,45 +140,46 @@ const rules = reactive({
 
 const submitForm = async (formEl: InstanceType<typeof ElForm> | null) => {
   if (!formEl) return
+  console.log('submitForm called')
   try {
     await formEl.validate(async (valid: boolean) => {
+      console.log('Form validation result:', valid)
       if (valid) {
         const functionUrl = '/api/connectSheet'
 
         try {
-          console.log('Sending data:', ruleForm)
+          console.log('Sending data to API:', ruleForm)
           const response = await axios.post(functionUrl, ruleForm)
-          console.log('Response received:', response.data)
+          console.log('API response received:', response.data)
           ElMessage.success('Pin created successfully!')
 
-          emit('updateMap', {
+          const newMarkerData = {
             name: ruleForm.name,
             year: ruleForm.year,
             address: ruleForm.address,
             desc: ruleForm.desc,
             src: ruleForm.src,
-            longitude: ruleForm.longitude,
-            latitude: ruleForm.latitude,
-          })
+            longitude: parseFloat(ruleForm.longitude),
+            latitude: parseFloat(ruleForm.latitude),
+          }
+          console.log('Emitting updateMap event with data:', newMarkerData)
+          emit('updateMap', newMarkerData)
 
           resetForm(formEl)
           dashboardUIStore.toggleEditMode()
         } catch (error: any) {
-          console.error(
-            'Submission error details:',
-            error.response?.data || error.message
-          )
+          console.error('API submission error:', error)
           ElMessage.error(
             `Failed to create pin: ${error.message || 'Unknown error'}`
           )
         }
       } else {
-        console.log('Validation Error')
+        console.log('Form validation failed')
         ElMessage.warning('Please fill in all required fields correctly.')
       }
     })
   } catch (error: any) {
-    console.error('Form validation error:', error)
+    console.error('Form submission error:', error)
     ElMessage.error(
       `An unexpected error occurred: ${error.message || 'Unknown error'}`
     )

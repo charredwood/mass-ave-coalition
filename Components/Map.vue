@@ -1,5 +1,5 @@
 <template>
-  <main id="main-container" />
+  <main id="main-container" :class="{ 'edit-mode': editCapable }" />
   <PopUp v-if="popUpActive" :pop-up-properties="popUpProperties" />
   <FormPopUp
     v-if="formActive"
@@ -30,7 +30,6 @@ import 'element-plus/dist/index.css'
 import { useDashboardUIStore } from '~/stores/dashboardUI'
 import PopUp from './PopUp.vue'
 import mapboxgl from 'mapbox-gl'
-import MapboxDraw from '@mapbox/mapbox-gl-draw'
 import FormPopUp from './FormPopUp.vue'
 
 const accessToken =
@@ -144,58 +143,17 @@ const loadMapDraw = () => {
     )
   })
 
-  // Edit mode (Add Pins)
-  // define the draw object and style the pin
-  let draw = new MapboxDraw({
-    styles: [
-      {
-        id: 'feature-inactive',
-        type: 'circle',
-        filter: [
-          'all',
-          ['==', '$type', 'Point'],
-          ['==', 'meta', 'feature'],
-          ['==', 'active', 'false'],
-        ],
-        paint: {
-          'circle-radius': 7,
-          'circle-color': 'black',
-        },
-      },
-    ],
-  })
-
-  // activate the form when the user clicks on the map in edit mode
-  // also create a marker on the map where the user clicked
   map.on('click', (e) => {
     if (editCapable.value) {
       console.log('Edit Capable:', editCapable.value)
       const coordinates = {
-        longitude: e.lngLat['lng'],
-        latitude: e.lngLat['lat'],
+        longitude: e.lngLat.lng,
+        latitude: e.lngLat.lat,
       }
       console.log('Clicked Location:', coordinates)
       locationCoordinates.value = coordinates
-      // create the form pop up
       formActive.value = !formActive.value
-      // let the pin to show up only when the form is active
-      if (formActive.value) {
-        // create a point
-        map.addControl(draw)
-        let feature = {
-          type: 'Point',
-          coordinates: [coordinates.longitude, coordinates.latitude],
-        }
-        let featureIds = draw.add(feature)
-        console.log(featureIds)
-      } else {
-        // remove the point
-        map.removeControl(draw)
-      }
-      // stopping the existing pop up from showing up
-      // popUpActive.value = false
     } else {
-      // To prevent the pop up to continue showing up when the user turns off the edit mode
       formActive.value = false
     }
   })
@@ -270,7 +228,7 @@ const addImage = async () => {
 }
 
 const addNewMarker = (markerData) => {
-  console.log('Adding new marker:', markerData)
+  console.log('addNewMarker called with data:', markerData)
 
   const lat = parseFloat(markerData.latitude)
   const lng = parseFloat(markerData.longitude)
@@ -280,20 +238,38 @@ const addNewMarker = (markerData) => {
     return
   }
 
-  const newMarker = new mapboxgl.Marker()
-    .setLngLat([lng, lat])
-    .setPopup(
-      new mapboxgl.Popup().setHTML(
-        `<h3>${markerData.name}</h3>
-         <p>Year: ${markerData.year}</p>
-         <p>Address: ${markerData.address}</p>
-         <p>${markerData.desc}</p>
-         <p>Source: ${markerData.src}</p>`
-      )
-    )
-    .addTo(map)
+  const newEventData = {
+    YEAR: markerData.year,
+    EVENT_NAME: markerData.name,
+    LATITUDE: lat,
+    LONGITUDE: lng,
+    DESCRIPTION: markerData.desc,
+    ADDRESS: markerData.address,
+    SOURCE_NAME: markerData.src,
+  }
+  console.log('New event data created:', newEventData)
 
-  console.log('New marker added:', newMarker)
+  const updatedData = [...eventLayer.props.data, newEventData]
+  console.log('Updated data:', updatedData)
+
+  eventLayer.setProps({
+    data: updatedData,
+    getPosition: (d) => {
+      const position = [parseFloat(d.LONGITUDE), parseFloat(d.LATITUDE)]
+      console.log('getPosition called for:', d, 'returning:', position)
+      return position
+    },
+    onClick: (info) => {
+      console.log('Icon clicked:', info)
+      popUpActive.value = true
+      popUpProperties.value = { object: info.object }
+      console.log('Popup activated with properties:', popUpProperties.value)
+    },
+  })
+  console.log('Event layer props updated')
+
+  map.triggerRepaint()
+  console.log('Map repaint triggered')
 }
 
 onMounted(async () => {
@@ -367,5 +343,9 @@ onMounted(async () => {
   height: 15px;
   border-radius: 50%;
   cursor: pointer;
+}
+
+.edit-mode {
+  cursor: url('../public/img/click.png'), auto;
 }
 </style>
