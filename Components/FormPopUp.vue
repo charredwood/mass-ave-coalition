@@ -86,7 +86,7 @@ const ruleForm = reactive<RuleForm>({
 })
 
 const dashboardUIStore = useDashboardUIStore()
-const emit = defineEmits(['updateMap'])
+const emit = defineEmits(['updateMap', 'closeForm'])
 
 const rules = reactive({
   name: [
@@ -167,6 +167,8 @@ const submitForm = async (formEl: InstanceType<typeof ElForm> | null) => {
 
           resetForm(formEl)
           dashboardUIStore.toggleEditMode()
+
+          emit('closeForm')
         } catch (error: any) {
           console.error('API submission error:', error)
           ElMessage.error(

@@ -5,6 +5,7 @@
     v-if="formActive"
     :location-coordinates="locationCoordinates"
     @updateMap="addNewMarker"
+    @closeForm="closeForm"
   />
   <div class="control-container">
     <label for="opacity-slider">1839 City of Boston Map Opacity</label>
@@ -270,6 +271,10 @@ const addNewMarker = (markerData) => {
 
   map.triggerRepaint()
   console.log('Map repaint triggered')
+}
+
+const closeForm = () => {
+  formActive.value = false
 }
 
 onMounted(async () => {
