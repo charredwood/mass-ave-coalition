@@ -4,8 +4,8 @@
   <FormPopUp
     v-if="formActive"
     :location-coordinates="locationCoordinates"
-    @updateMap="addNewMarker"
-    @closeForm="closeForm"
+    @update-map="addNewMarker"
+    @close-form="closeForm"
   />
   <div class="control-container">
     <label for="opacity-slider">1839 City of Boston Map Opacity</label>
@@ -23,7 +23,7 @@
 </template>
 
 <script setup>
-import { ref, onMounted, watch } from 'vue'
+import { ref, onMounted, watch, nextTick } from 'vue'
 import { csv } from 'd3'
 import { MapboxLayer } from '@deck.gl/mapbox'
 import { IconLayer } from '@deck.gl/layers'
@@ -32,6 +32,7 @@ import { useDashboardUIStore } from '~/stores/dashboardUI'
 import PopUp from './PopUp.vue'
 import mapboxgl from 'mapbox-gl'
 import FormPopUp from './FormPopUp.vue'
+import Papa from 'papaparse'
 
 const accessToken =
   'pk.eyJ1IjoiaG9nYW5yeSIsImEiOiJjbHMwajM2NXIwMWRnMmtsZDI2YWlxNHNjIn0.hj-yWC3dV-QiBbQzZX54Pg'
@@ -48,7 +49,8 @@ const {
 const popUpActive = ref(false)
 const popUpProperties = ref({})
 const locationCoordinates = ref({})
-let eventLayer
+const eventLayer = ref(null)
+const mapData = ref([])
 let imageLayer
 let map
 const formActive = ref(false)
@@ -161,42 +163,55 @@ const loadMapDraw = () => {
 }
 
 const addEvent = async () => {
-  const eventsData = await csv('csv/DB_0421_events.csv')
-  console.log(eventsData)
+  const SHEET_ID = '1I7wAhaMPa3Pk6IEOPpN1_GOjIeINbK4-2O5hgpg1KhQ'
+  const SHEET_NAME = 'HistoryInput'
+  const CSV_URL = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?tqx=out:csv&sheet=${SHEET_NAME}`
 
-  eventLayer = new MapboxLayer({
-    id: 'EventLayer',
-    type: IconLayer,
-    data: eventsData,
-    getColor: (d) => {
-      const year = parseInt(d.YEAR)
-      return [37, 166, 154, 255 * pinOpacity.value]
+  Papa.parse(CSV_URL, {
+    download: true,
+    header: true,
+    complete: (results) => {
+      mapData.value = results.data
+      console.log(mapData.value)
+
+      eventLayer.value = new MapboxLayer({
+        id: 'EventLayer',
+        type: IconLayer,
+        data: mapData.value,
+        getColor: (d) => {
+          const year = parseInt(d.YEAR)
+          return [37, 166, 154, 255 * pinOpacity.value]
+        },
+        getIcon: (d) => 'marker',
+        getPosition: (d) => {
+          return [parseFloat(d['LONGITUDE']), parseFloat(d['LATITUDE'])]
+        },
+        getSize: 50,
+        iconAtlas:
+          'https://raw.githubusercontent.com/visgl/deck.gl-data/master/website/icon-atlas.png',
+        iconMapping:
+          'https://raw.githubusercontent.com/visgl/deck.gl-data/master/website/icon-atlas.json',
+        visible: eventLayerVisible.value,
+        pickable: true,
+        onClick: (info) => {
+          popUpActive.value = !popUpActive.value
+          popUpProperties.value = info
+          console.log('Clicked on', info.object, info)
+          console.log(popUpActive.value)
+          console.log(pinOpacity(info.object))
+        },
+      })
+
+      map.addLayer(eventLayer.value)
     },
-    getIcon: (d) => 'marker',
-    getPosition: (d) => {
-      return [-1 * parseFloat(d['LONGITUDE']), parseFloat(d['LATITUDE'])]
-    },
-    getSize: 50,
-    iconAtlas:
-      'https://raw.githubusercontent.com/visgl/deck.gl-data/master/website/icon-atlas.png',
-    iconMapping:
-      'https://raw.githubusercontent.com/visgl/deck.gl-data/master/website/icon-atlas.json',
-    visible: eventLayerVisible.value,
-    pickable: true,
-    onClick: (info) => {
-      popUpActive.value = !popUpActive.value
-      popUpProperties.value = info
-      console.log('Clicked on', info.object, info)
-      console.log(popUpActive.value)
-      console.log(pinOpacity(info.object))
+    error: (error) => {
+      console.error('Error parsing CSV:', error)
     },
   })
-
-  map.addLayer(eventLayer)
 }
 
 const addImage = async () => {
-  const imagesData = await csv('csv/DB_0421_images.csv')
+  const imagesData = await csv('csv/DB_0421_events.csv')
 
   imageLayer = new MapboxLayer({
     id: 'ImageLayer',
@@ -228,11 +243,11 @@ const addImage = async () => {
   map.addLayer(imageLayer)
 }
 
-const addNewMarker = (markerData) => {
+const addNewMarker = async (markerData) => {
   console.log('addNewMarker called with data:', markerData)
 
-  const lat = parseFloat(markerData.latitude)
-  const lng = parseFloat(markerData.longitude)
+  const lat = parseFloat(markerData.LATITUDE)
+  const lng = parseFloat(markerData.LONGITUDE)
 
   if (isNaN(lat) || isNaN(lng)) {
     console.error('Invalid coordinates:', markerData)
@@ -240,37 +255,41 @@ const addNewMarker = (markerData) => {
   }
 
   const newEventData = {
-    YEAR: markerData.year,
-    EVENT_NAME: markerData.name,
+    YEAR: markerData.YEAR,
+    EVENT_NAME: markerData.EVENT_NAME,
     LATITUDE: lat,
     LONGITUDE: lng,
-    DESCRIPTION: markerData.desc,
-    ADDRESS: markerData.address,
-    SOURCE_NAME: markerData.src,
+    DESCRIPTION: markerData.DESCRIPTION,
+    ADDRESS: markerData.ADDRESS,
+    SOURCE_NAME: markerData.SOURCE_NAME,
   }
   console.log('New event data created:', newEventData)
 
-  const updatedData = [...eventLayer.props.data, newEventData]
-  console.log('Updated data:', updatedData)
+  mapData.value = [...mapData.value, newEventData]
 
-  eventLayer.setProps({
-    data: updatedData,
-    getPosition: (d) => {
-      const position = [parseFloat(d.LONGITUDE), parseFloat(d.LATITUDE)]
-      console.log('getPosition called for:', d, 'returning:', position)
-      return position
-    },
-    onClick: (info) => {
-      console.log('Icon clicked:', info)
-      popUpActive.value = true
-      popUpProperties.value = { object: info.object }
-      console.log('Popup activated with properties:', popUpProperties.value)
-    },
-  })
-  console.log('Event layer props updated')
+  if (eventLayer.value) {
+    eventLayer.value.setProps({
+      data: mapData.value,
+      getPosition: (d) => {
+        const position = [parseFloat(d.LONGITUDE), parseFloat(d.LATITUDE)]
+        console.log('getPosition called for:', d, 'returning:', position)
+        return position
+      },
+      onClick: (info) => {
+        console.log('Icon clicked:', info)
+        popUpActive.value = true
+        popUpProperties.value = { object: info.object }
+        console.log('Popup activated with properties:', popUpProperties.value)
+      },
+    })
+    console.log('Event layer props updated')
 
-  map.triggerRepaint()
-  console.log('Map repaint triggered')
+    await nextTick()
+    map.triggerRepaint()
+    console.log('Map repaint triggered')
+  } else {
+    console.error('Event layer not initialized')
+  }
 }
 
 const closeForm = () => {

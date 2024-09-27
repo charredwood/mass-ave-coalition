@@ -1,5 +1,3 @@
-// https://v3.nuxtjs.org/api/configuration/nuxt.config
-
 export default defineNuxtConfig({
   modules: [
     // ...
@@ -15,4 +13,5 @@ export default defineNuxtConfig({
       },
     },
   },
+  css: ['mapbox-gl/dist/mapbox-gl.css'],
 })

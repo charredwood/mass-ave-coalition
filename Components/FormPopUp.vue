@@ -154,13 +154,13 @@ const submitForm = async (formEl: InstanceType<typeof ElForm> | null) => {
           ElMessage.success('Pin created successfully!')
 
           const newMarkerData = {
-            name: ruleForm.name,
-            year: ruleForm.year,
-            address: ruleForm.address,
-            desc: ruleForm.desc,
-            src: ruleForm.src,
-            longitude: parseFloat(ruleForm.longitude),
-            latitude: parseFloat(ruleForm.latitude),
+            YEAR: ruleForm.year,
+            EVENT_NAME: ruleForm.name,
+            LATITUDE: parseFloat(ruleForm.latitude),
+            LONGITUDE: parseFloat(ruleForm.longitude),
+            DESCRIPTION: ruleForm.desc,
+            ADDRESS: ruleForm.address,
+            SOURCE_NAME: ruleForm.src,
           }
           console.log('Emitting updateMap event with data:', newMarkerData)
           emit('updateMap', newMarkerData)
