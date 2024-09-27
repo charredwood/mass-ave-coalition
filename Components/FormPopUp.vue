@@ -92,7 +92,7 @@ const rules = reactive({
   name: [
     { required: true, message: 'Event name required', trigger: 'blur' },
     {
-      max: 100,
+      max: 120,
       message: 'The maximum length is 120 characters.',
       trigger: 'blur',
     },
@@ -115,8 +115,8 @@ const rules = reactive({
   desc: [
     { required: true, message: 'Event description required', trigger: 'blur' },
     {
-      min: 100,
-      message: 'The minimum length is 100 characters.',
+      min: 10,
+      message: 'The minimum length is 10 characters.',
       trigger: 'blur',
     },
   ],
