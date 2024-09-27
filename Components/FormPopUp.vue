@@ -86,13 +86,13 @@ const ruleForm = reactive<RuleForm>({
 })
 
 const dashboardUIStore = useDashboardUIStore()
-const emit = defineEmits(['updateMap'])
+const emit = defineEmits(['updateMap', 'closeForm'])
 
 const rules = reactive({
   name: [
     { required: true, message: 'Event name required', trigger: 'blur' },
     {
-      max: 100,
+      max: 120,
       message: 'The maximum length is 120 characters.',
       trigger: 'blur',
     },
@@ -115,8 +115,8 @@ const rules = reactive({
   desc: [
     { required: true, message: 'Event description required', trigger: 'blur' },
     {
-      min: 100,
-      message: 'The minimum length is 100 characters.',
+      min: 10,
+      message: 'The minimum length is 10 characters.',
       trigger: 'blur',
     },
   ],
@@ -140,45 +140,48 @@ const rules = reactive({
 
 const submitForm = async (formEl: InstanceType<typeof ElForm> | null) => {
   if (!formEl) return
+  console.log('submitForm called')
   try {
     await formEl.validate(async (valid: boolean) => {
+      console.log('Form validation result:', valid)
       if (valid) {
         const functionUrl = '/api/connectSheet'
 
         try {
-          console.log('Sending data:', ruleForm)
+          console.log('Sending data to API:', ruleForm)
           const response = await axios.post(functionUrl, ruleForm)
-          console.log('Response received:', response.data)
+          console.log('API response received:', response.data)
           ElMessage.success('Pin created successfully!')
 
-          emit('updateMap', {
-            name: ruleForm.name,
-            year: ruleForm.year,
-            address: ruleForm.address,
-            desc: ruleForm.desc,
-            src: ruleForm.src,
-            longitude: ruleForm.longitude,
-            latitude: ruleForm.latitude,
-          })
+          const newMarkerData = {
+            YEAR: ruleForm.year,
+            EVENT_NAME: ruleForm.name,
+            LATITUDE: parseFloat(ruleForm.latitude),
+            LONGITUDE: parseFloat(ruleForm.longitude),
+            DESCRIPTION: ruleForm.desc,
+            ADDRESS: ruleForm.address,
+            SOURCE_NAME: ruleForm.src,
+          }
+          console.log('Emitting updateMap event with data:', newMarkerData)
+          emit('updateMap', newMarkerData)
 
           resetForm(formEl)
           dashboardUIStore.toggleEditMode()
+
+          emit('closeForm')
         } catch (error: any) {
-          console.error(
-            'Submission error details:',
-            error.response?.data || error.message
-          )
+          console.error('API submission error:', error)
           ElMessage.error(
             `Failed to create pin: ${error.message || 'Unknown error'}`
           )
         }
       } else {
-        console.log('Validation Error')
+        console.log('Form validation failed')
         ElMessage.warning('Please fill in all required fields correctly.')
       }
     })
   } catch (error: any) {
-    console.error('Form validation error:', error)
+    console.error('Form submission error:', error)
     ElMessage.error(
       `An unexpected error occurred: ${error.message || 'Unknown error'}`
     )

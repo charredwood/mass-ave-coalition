@@ -1,10 +1,11 @@
 <template>
-  <main id="main-container" />
+  <main id="main-container" :class="{ 'edit-mode': editCapable }" />
   <PopUp v-if="popUpActive" :pop-up-properties="popUpProperties" />
   <FormPopUp
     v-if="formActive"
     :location-coordinates="locationCoordinates"
-    @updateMap="addNewMarker"
+    @update-map="addNewMarker"
+    @close-form="closeForm"
   />
   <div class="control-container">
     <label for="opacity-slider">1839 City of Boston Map Opacity</label>
@@ -22,7 +23,7 @@
 </template>
 
 <script setup>
-import { ref, onMounted, watch } from 'vue'
+import { ref, onMounted, watch, nextTick } from 'vue'
 import { csv } from 'd3'
 import { MapboxLayer } from '@deck.gl/mapbox'
 import { IconLayer } from '@deck.gl/layers'
@@ -30,8 +31,8 @@ import 'element-plus/dist/index.css'
 import { useDashboardUIStore } from '~/stores/dashboardUI'
 import PopUp from './PopUp.vue'
 import mapboxgl from 'mapbox-gl'
-import MapboxDraw from '@mapbox/mapbox-gl-draw'
 import FormPopUp from './FormPopUp.vue'
+import Papa from 'papaparse'
 
 const accessToken =
   'pk.eyJ1IjoiaG9nYW5yeSIsImEiOiJjbHMwajM2NXIwMWRnMmtsZDI2YWlxNHNjIn0.hj-yWC3dV-QiBbQzZX54Pg'
@@ -48,7 +49,8 @@ const {
 const popUpActive = ref(false)
 const popUpProperties = ref({})
 const locationCoordinates = ref({})
-let eventLayer
+const eventLayer = ref(null)
+const mapData = ref([])
 let imageLayer
 let map
 const formActive = ref(false)
@@ -144,100 +146,72 @@ const loadMapDraw = () => {
     )
   })
 
-  // Edit mode (Add Pins)
-  // define the draw object and style the pin
-  let draw = new MapboxDraw({
-    styles: [
-      {
-        id: 'feature-inactive',
-        type: 'circle',
-        filter: [
-          'all',
-          ['==', '$type', 'Point'],
-          ['==', 'meta', 'feature'],
-          ['==', 'active', 'false'],
-        ],
-        paint: {
-          'circle-radius': 7,
-          'circle-color': 'black',
-        },
-      },
-    ],
-  })
-
-  // activate the form when the user clicks on the map in edit mode
-  // also create a marker on the map where the user clicked
   map.on('click', (e) => {
     if (editCapable.value) {
       console.log('Edit Capable:', editCapable.value)
       const coordinates = {
-        longitude: e.lngLat['lng'],
-        latitude: e.lngLat['lat'],
+        longitude: e.lngLat.lng,
+        latitude: e.lngLat.lat,
       }
       console.log('Clicked Location:', coordinates)
       locationCoordinates.value = coordinates
-      // create the form pop up
       formActive.value = !formActive.value
-      // let the pin to show up only when the form is active
-      if (formActive.value) {
-        // create a point
-        map.addControl(draw)
-        let feature = {
-          type: 'Point',
-          coordinates: [coordinates.longitude, coordinates.latitude],
-        }
-        let featureIds = draw.add(feature)
-        console.log(featureIds)
-      } else {
-        // remove the point
-        map.removeControl(draw)
-      }
-      // stopping the existing pop up from showing up
-      // popUpActive.value = false
     } else {
-      // To prevent the pop up to continue showing up when the user turns off the edit mode
       formActive.value = false
     }
   })
 }
 
 const addEvent = async () => {
-  const eventsData = await csv('csv/DB_0421_events.csv')
-  console.log(eventsData)
+  const SHEET_ID = '1I7wAhaMPa3Pk6IEOPpN1_GOjIeINbK4-2O5hgpg1KhQ'
+  const SHEET_NAME = 'HistoryInput'
+  const CSV_URL = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?tqx=out:csv&sheet=${SHEET_NAME}`
 
-  eventLayer = new MapboxLayer({
-    id: 'EventLayer',
-    type: IconLayer,
-    data: eventsData,
-    getColor: (d) => {
-      const year = parseInt(d.YEAR)
-      return [37, 166, 154, 255 * pinOpacity.value]
+  Papa.parse(CSV_URL, {
+    download: true,
+    header: true,
+    complete: (results) => {
+      mapData.value = results.data
+      console.log(mapData.value)
+
+      eventLayer.value = new MapboxLayer({
+        id: 'EventLayer',
+        type: IconLayer,
+        data: mapData.value,
+        getColor: (d) => {
+          const year = parseInt(d.YEAR)
+          return [37, 166, 154, 255 * pinOpacity.value]
+        },
+        getIcon: (d) => 'marker',
+        getPosition: (d) => {
+          return [parseFloat(d['LONGITUDE']), parseFloat(d['LATITUDE'])]
+        },
+        getSize: 50,
+        iconAtlas:
+          'https://raw.githubusercontent.com/visgl/deck.gl-data/master/website/icon-atlas.png',
+        iconMapping:
+          'https://raw.githubusercontent.com/visgl/deck.gl-data/master/website/icon-atlas.json',
+        visible: eventLayerVisible.value,
+        pickable: true,
+        onClick: (info) => {
+          popUpActive.value = !popUpActive.value
+          popUpProperties.value = info
+          console.log('Clicked on', info.object, info)
+          console.log(popUpActive.value)
+          console.log(pinOpacity(info.object))
+        },
+      })
+
+      map.addLayer(eventLayer.value)
     },
-    getIcon: (d) => 'marker',
-    getPosition: (d) => {
-      return [-1 * parseFloat(d['LONGITUDE']), parseFloat(d['LATITUDE'])]
-    },
-    getSize: 50,
-    iconAtlas:
-      'https://raw.githubusercontent.com/visgl/deck.gl-data/master/website/icon-atlas.png',
-    iconMapping:
-      'https://raw.githubusercontent.com/visgl/deck.gl-data/master/website/icon-atlas.json',
-    visible: eventLayerVisible.value,
-    pickable: true,
-    onClick: (info) => {
-      popUpActive.value = !popUpActive.value
-      popUpProperties.value = info
-      console.log('Clicked on', info.object, info)
-      console.log(popUpActive.value)
-      console.log(pinOpacity(info.object))
+    error: (error) => {
+      console.error('Error parsing CSV:', error)
     },
   })
-
-  map.addLayer(eventLayer)
 }
 
 const addImage = async () => {
-  const imagesData = await csv('csv/DB_0421_images.csv')
+  const imagesData = await csv('csv/DB_0421_events.csv')
 
   imageLayer = new MapboxLayer({
     id: 'ImageLayer',
@@ -269,31 +243,57 @@ const addImage = async () => {
   map.addLayer(imageLayer)
 }
 
-const addNewMarker = (markerData) => {
-  console.log('Adding new marker:', markerData)
+const addNewMarker = async (markerData) => {
+  console.log('addNewMarker called with data:', markerData)
 
-  const lat = parseFloat(markerData.latitude)
-  const lng = parseFloat(markerData.longitude)
+  const lat = parseFloat(markerData.LATITUDE)
+  const lng = parseFloat(markerData.LONGITUDE)
 
   if (isNaN(lat) || isNaN(lng)) {
     console.error('Invalid coordinates:', markerData)
     return
   }
 
-  const newMarker = new mapboxgl.Marker()
-    .setLngLat([lng, lat])
-    .setPopup(
-      new mapboxgl.Popup().setHTML(
-        `<h3>${markerData.name}</h3>
-         <p>Year: ${markerData.year}</p>
-         <p>Address: ${markerData.address}</p>
-         <p>${markerData.desc}</p>
-         <p>Source: ${markerData.src}</p>`
-      )
-    )
-    .addTo(map)
+  const newEventData = {
+    YEAR: markerData.YEAR,
+    EVENT_NAME: markerData.EVENT_NAME,
+    LATITUDE: lat,
+    LONGITUDE: lng,
+    DESCRIPTION: markerData.DESCRIPTION,
+    ADDRESS: markerData.ADDRESS,
+    SOURCE_NAME: markerData.SOURCE_NAME,
+  }
+  console.log('New event data created:', newEventData)
 
-  console.log('New marker added:', newMarker)
+  mapData.value = [...mapData.value, newEventData]
+
+  if (eventLayer.value) {
+    eventLayer.value.setProps({
+      data: mapData.value,
+      getPosition: (d) => {
+        const position = [parseFloat(d.LONGITUDE), parseFloat(d.LATITUDE)]
+        console.log('getPosition called for:', d, 'returning:', position)
+        return position
+      },
+      onClick: (info) => {
+        console.log('Icon clicked:', info)
+        popUpActive.value = true
+        popUpProperties.value = { object: info.object }
+        console.log('Popup activated with properties:', popUpProperties.value)
+      },
+    })
+    console.log('Event layer props updated')
+
+    await nextTick()
+    map.triggerRepaint()
+    console.log('Map repaint triggered')
+  } else {
+    console.error('Event layer not initialized')
+  }
+}
+
+const closeForm = () => {
+  formActive.value = false
 }
 
 onMounted(async () => {
@@ -367,5 +367,9 @@ onMounted(async () => {
   height: 15px;
   border-radius: 50%;
   cursor: pointer;
+}
+
+.edit-mode {
+  cursor: url('../public/img/click.png'), auto;
 }
 </style>
