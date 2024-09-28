@@ -31,6 +31,7 @@ import 'element-plus/dist/index.css'
 import { useDashboardUIStore } from '~/stores/dashboardUI'
 import PopUp from './PopUp.vue'
 import mapboxgl from 'mapbox-gl'
+import MapboxDraw from '@mapbox/mapbox-gl-draw'
 import FormPopUp from './FormPopUp.vue'
 import Papa from 'papaparse'
 
