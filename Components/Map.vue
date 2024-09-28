@@ -77,9 +77,9 @@ watch(
 )
 
 watch(
-  editCapable,
-  (newEditCapable) => {
-    console.log('Edit Capable:', newEditCapable)
+  Capable,
+  (newCapable) => {
+    console.log(' Capable:', newCapable)
   },
   { immediate: true }
 )
@@ -145,9 +145,28 @@ const loadMapDraw = () => {
       'EventLayer'
     )
   })
-
+  
+  let draw = new MapboxDraw({
+    styles: [
+      {
+        id: 'feature-inactive',
+        type: 'circle',
+        filter: [
+          'all',
+          ['==', '$type', 'Point'],
+          ['==', 'meta', 'feature'],
+          ['==', 'active', 'false'],
+        ],
+        paint: {
+          'circle-radius': 7,
+          'circle-color': 'black',
+        },
+      },
+    ],
+  })
+  
   map.on('click', (e) => {
-    if (editCapable.value) {
+    if (Capable.value) {
       console.log('Edit Capable:', editCapable.value)
       const coordinates = {
         longitude: e.lngLat.lng,
@@ -156,8 +175,18 @@ const loadMapDraw = () => {
       console.log('Clicked Location:', coordinates)
       locationCoordinates.value = coordinates
       formActive.value = !formActive.value
-    } else {
-      formActive.value = false
+      if (formActive.value) {
+        // create a point
+        map.addControl(draw)
+        let feature = {
+          type: 'Point',
+          coordinates: [coordinates.longitude, coordinates.latitude],
+        }
+        let featureIds = draw.add(feature)
+        console.log(featureIds)
+      } else {
+        // remove the point
+        map.removeControl(draw)
     }
   })
 }
