@@ -308,6 +308,7 @@ const addNewMarker = async (markerData) => {
         console.log('getPosition called for:', d, 'returning:', position)
         return position
       },
+      visible: eventLayerVisible.value,
       onClick: (info) => {
         console.log('Icon clicked:', info)
         popUpActive.value = true
