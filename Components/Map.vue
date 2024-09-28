@@ -78,9 +78,9 @@ watch(
 )
 
 watch(
-  Capable,
+  editCapable, // Corrected from Capable to editCapable
   (newCapable) => {
-    console.log(' Capable:', newCapable)
+    console.log('Edit Capable:', newCapable)
   },
   { immediate: true }
 )
@@ -167,12 +167,12 @@ const loadMapDraw = () => {
   })
   
   map.on('click', (e) => {
-    if (Capable.value) {
-      console.log('Edit Capable:', editCapable.value)
-      const coordinates = {
-        longitude: e.lngLat.lng,
-        latitude: e.lngLat.lat,
-      }
+  if (editCapable.value) { // Updated from Capable to editCapable
+    console.log('Edit Capable:', editCapable.value)
+    const coordinates = {
+      longitude: e.lngLat.lng,
+      latitude: e.lngLat.lat,
+    }
       console.log('Clicked Location:', coordinates)
       locationCoordinates.value = coordinates
       formActive.value = !formActive.value
