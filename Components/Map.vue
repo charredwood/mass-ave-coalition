@@ -181,7 +181,7 @@ const loadMapDraw = () => {
         map.addControl(draw)
         let feature = {
           type: 'Point',
-          coordinates: [e.lngLat.lng., e.lngLat.lat],
+          coordinates: [e.lngLat.lng, e.lngLat.lat],
         }
         let featureIds = draw.add(feature)
         console.log(featureIds)
