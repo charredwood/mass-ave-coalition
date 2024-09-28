@@ -181,13 +181,16 @@ const loadMapDraw = () => {
         map.addControl(draw)
         let feature = {
           type: 'Point',
-          coordinates: [coordinates.longitude, coordinates.latitude],
+          coordinates: [e.lngLat.lng., e.lngLat.lat],
         }
         let featureIds = draw.add(feature)
         console.log(featureIds)
       } else {
         // remove the point
         map.removeControl(draw)
+    }
+  } else {
+      formActive.value = false
     }
   })
 }
